@@ -1,0 +1,1080 @@
+<!doctype html>
+<!-- 原型工作台 · 窗口1（重写版，单文件）
+     界面只有三块：原型向导（4 步）→ 我的原型（清单）→ 放映层（页内看原型）。
+     生成 = 写文件 + 自动新建会话 + 记台账；本工作台永远只占一张窗，多余产物窗自动收回。
+     皮肤：/api/worktable/template/dshell.css，只用 dshell-* 组件类 + 少量自有结构；不引任何外部资源。
+     接口：/api/worktable/fs | write | mkdir | file | site（全部同源）。 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>原型工作台</title>
+<link rel="stylesheet" href="/api/worktable/template/dshell.css" />
+<style>
+  :root {
+    color-scheme: light;
+    --dsw-alias-bg-base: #eaf1ff;
+    --dsw-alias-fill-l1: #ffffff;
+    --dsw-alias-border-l1: #d3e2fb;
+    --dsw-alias-border-l2: #b9d2f6;
+    --dsw-alias-label-primary: #0b1b33;
+    --dsw-alias-label-secondary: #4a5b74;
+    --dsw-alias-label-tertiary: #5b6b83;
+    --dsw-alias-state-accent-primary: #0a84ff;
+    --dsw-alias-state-danger: #a01d15;
+    --wt-blue: #0060df; --wt-indigo: #5e5ce6;
+    --wt-green: #127a39; --wt-orange: #9a5b00;
+    --wt-rad: 12px; --wt-rad-lg: 18px; --wt-rad-xl: 26px;
+    --wt-hair: 1px solid var(--dsw-alias-border-l1, #d3e2fb);
+    --wt-glass: rgba(255,255,255,.84);
+    --wt-card: 0 1px 2px rgba(11,27,51,.05), 0 14px 30px -22px rgba(11,27,51,.22);
+    --wt-pop: 0 20px 46px -20px rgba(11,27,51,.32);
+    --wt-ease: cubic-bezier(.32,.72,0,1);
+    --wt-grad-brand: linear-gradient(135deg, var(--dsw-alias-state-accent-primary, #0a84ff), var(--wt-indigo, #5e5ce6));
+    --wt-ink: var(--dsw-alias-label-primary, #0b1b33);
+  }
+  html { background: #eaf1ff; }
+  body { background: var(--dsw-alias-bg-base, #eaf1ff); color: var(--dsw-alias-label-primary, #0b1b33); min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
+    font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+  body::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 440px; z-index: 0; pointer-events: none;
+    background: radial-gradient(1100px 380px at 16% -14%, rgba(10,132,255,.20), transparent 62%),
+                radial-gradient(760px 300px at 90% -10%, rgba(90,200,250,.18), transparent 60%); }
+  body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 440px; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(11,27,51,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(11,27,51,.055) 1px, transparent 1px);
+    background-size: 34px 34px; -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent); }
+  .dshell { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; padding: 24px 22px 40px; max-width: 1000px; margin: 0 auto; }
+  .dshell-title { font-size: 32px; line-height: 1.14; font-weight: 600; letter-spacing: -.032em; margin: 0; }
+  .dshell-sub { font-size: 13px; line-height: 1.6; color: var(--dsw-alias-label-secondary, #4a5b74); margin: 6px 0 0; max-width: 68ch; }
+  .dshell-muted { color: var(--dsw-alias-label-tertiary, #5b6b83); }
+  .dshell-card { border-radius: var(--wt-rad-lg); border: var(--wt-hair); background: var(--wt-glass); box-shadow: var(--wt-card);
+    -webkit-backdrop-filter: saturate(1.5) blur(10px); backdrop-filter: saturate(1.5) blur(10px); padding: 16px 18px; }
+  .dshell-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 13px; font-size: 12.5px; font-weight: 500;
+    border-radius: var(--wt-rad); border: 1px solid transparent; color: #fff; cursor: pointer;
+    background: linear-gradient(180deg, var(--dsw-alias-state-accent-primary, #0a84ff), var(--wt-blue, #0060df));
+    box-shadow: 0 6px 16px -10px rgba(10,132,255,.85); transition: transform .22s var(--wt-ease), filter .22s var(--wt-ease); }
+  .dshell-btn:hover { transform: translateY(-1px); filter: brightness(1.04); }
+  .dshell-btn:active { transform: none; }
+  .dshell-btnGhost { background: #fff; color: var(--dsw-alias-label-secondary, #4a5b74); border-color: var(--dsw-alias-border-l1, #d3e2fb); box-shadow: none; }
+  .dshell-btnGhost:hover { color: var(--wt-blue, #0060df); border-color: var(--dsw-alias-border-l2, #b9d2f6); transform: none; }
+  .dshell-btnGhost[data-on="true"] { color: var(--wt-blue, #0060df); border-color: var(--dsw-alias-state-accent-primary, #0a84ff); background: rgba(10,132,255,.07); }
+  .dshell-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; border-radius: 8px; border: var(--wt-hair); background: rgba(255,255,255,.7); color: var(--dsw-alias-label-secondary, #4a5b74); padding: 2px 8px; }
+  .dshell-badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--dsw-alias-state-accent-primary, #0a84ff); }
+  .dshell-badgeDone { color: var(--wt-green, #127a39); border-color: rgba(18,122,57,.3); background: rgba(18,122,57,.07); }
+  .dshell-badgeDone::before { background: var(--wt-green, #127a39); }
+  .dshell-badgeWait { color: var(--wt-orange, #9a5b00); border-color: rgba(154,91,0,.3); background: rgba(154,91,0,.07); }
+  .dshell-badgeWait::before { background: #b26a00; }
+  .dshell-input, .dshell-textarea { font: inherit; font-size: 12.5px; border-radius: var(--wt-rad); border: var(--wt-hair); background: #fff;
+    color: var(--dsw-alias-label-primary, #0b1b33); width: 100%; padding: 7px 10px; transition: border-color .22s var(--wt-ease), box-shadow .22s var(--wt-ease); }
+  .dshell-input:focus, .dshell-textarea:focus { border-color: var(--dsw-alias-state-accent-primary, #0a84ff); box-shadow: 0 0 0 3px rgba(10,132,255,.16); outline: none; }
+  .dshell-progress { height: 6px; border-radius: 999px; background: #dfeaf9; overflow: hidden; }
+  .dshell-progressBar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--dsw-alias-state-accent-primary, #0a84ff), var(--wt-indigo, #5e5ce6)); }
+  .dshell-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .dshell-table th, .dshell-table td { border-bottom: 1px solid var(--dsw-alias-border-l1, #d3e2fb); padding: 8px 9px; text-align: left; vertical-align: middle; }
+  .dshell-table th { color: var(--dsw-alias-label-secondary, #4a5b74); font-weight: 500; white-space: nowrap; }
+  .dshell-table td.act { text-align: right; white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--dsw-alias-state-accent-primary, #0a84ff); outline-offset: 2px; }
+  .dshell-btn:focus:not(:focus-visible) { outline: none; }
+  .ic { display: inline-block; width: 1em; height: 1em; vertical-align: -.14em; flex: none; }
+  /* —— 品牌区 / Hero —— */
+  .wt-hero { position: relative; overflow: hidden; padding: 24px 26px 22px; border: var(--wt-hair); border-radius: var(--wt-rad-lg);
+    background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.7));
+    -webkit-backdrop-filter: saturate(1.5) blur(10px); backdrop-filter: saturate(1.5) blur(10px); box-shadow: var(--wt-card); }
+  .wt-hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.9) 30%, rgba(255,255,255,.9) 70%, transparent); }
+  .wt-hero::after { content: ""; position: absolute; right: -90px; top: -120px; width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(10,132,255,.22), transparent 62%); pointer-events: none; }
+  .wt-brand { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .wt-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--wt-grad-brand); color: #fff;
+    box-shadow: 0 8px 18px -10px rgba(10,132,255,.95); }
+  .wt-mark .ic { color: #fff; font-size: 16px; }
+  .wt-brandName { font-size: 13px; font-weight: 600; letter-spacing: -.012em; }
+  .wt-pill { padding: 3px 10px; border-radius: 999px; border: var(--wt-hair); background: rgba(255,255,255,.7); font-size: 10.5px; font-weight: 500;
+    color: var(--dsw-alias-label-secondary, #4a5b74); font-variant-numeric: tabular-nums; }
+  .wt-heroActions { display: flex; gap: 8px; margin-left: auto; }
+  .wt-display { position: relative; margin: 18px 0 0; font-size: 34px; line-height: 1.08; font-weight: 600; letter-spacing: -.035em; max-width: 22em; color: var(--wt-ink); }
+  .wt-display em { font-style: normal; color: var(--wt-blue, #0060df); }
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .wt-display em { background: var(--wt-grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  }
+  .wt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .wt-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .wt-head b { font-size: 13px; font-weight: 600; letter-spacing: -.01em; }
+  .wt-head .ic { color: var(--dsw-alias-state-accent-primary, #0a84ff); }
+  .wt-head .grow { flex: 1; }
+  .wt-steps { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .wt-step { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--dsw-alias-label-tertiary, #5b6b83); cursor: pointer; background: none; border: 0; padding: 0; font-family: inherit; }
+  .wt-step i { font-style: normal; width: 16px; height: 16px; border-radius: 50%; border: var(--wt-hair); display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; background: #fff; }
+  .wt-step[data-on="true"] { color: var(--dsw-alias-label-primary, #0b1b33); font-weight: 600; }
+  .wt-step[data-on="true"] i { border-color: transparent; background: linear-gradient(180deg, var(--dsw-alias-state-accent-primary, #0a84ff), var(--wt-blue, #0060df)); color: #fff; }
+  .wt-step[data-done="true"] i { color: var(--dsw-alias-state-accent-primary, #0a84ff); border-color: var(--dsw-alias-border-l2, #b9d2f6); }
+  .wt-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .wt-field > label { font-size: 11.5px; color: var(--dsw-alias-label-secondary, #4a5b74); display: flex; gap: 5px; align-items: center; }
+  .wt-field .req { color: var(--dsw-alias-state-danger, #a01d15); }
+  .wt-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wt-err { font-size: 11.5px; color: var(--dsw-alias-state-danger, #a01d15); min-height: 16px; }
+  .wt-nav { display: flex; gap: 8px; align-items: center; }
+  .wt-nav .grow { flex: 1; }
+  .wt-arch { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 10px; }
+  .wt-acard { display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: var(--wt-rad-lg); border: var(--wt-hair);
+    background: linear-gradient(180deg, #fff, #f7fbff); box-shadow: var(--wt-card); transition: border-color .22s var(--wt-ease); }
+  .wt-acard[data-on="true"] { border-color: var(--dsw-alias-state-accent-primary, #0a84ff); box-shadow: 0 0 0 3px rgba(10,132,255,.10); }
+  .wt-acard h4 { margin: 0; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .wt-acard h4 .ic { color: var(--dsw-alias-state-accent-primary, #0a84ff); }
+  .wt-acard .sk { display: flex; gap: 5px; height: 34px; }
+  .wt-acard .sk i { font-style: normal; border: 1px dashed var(--dsw-alias-border-l2, #b9d2f6); border-radius: var(--wt-rad); flex: 1;
+    background: linear-gradient(180deg, rgba(10,132,255,.10), rgba(94,92,230,.06)); }
+  .wt-acard p { margin: 0; font-size: 11.5px; color: var(--dsw-alias-label-secondary, #4a5b74); line-height: 1.55; }
+  .wt-acard .refs { display: flex; flex-wrap: wrap; gap: 5px; }
+  .wt-acard .refs a { font-size: 10.5px; color: var(--wt-blue, #0060df); text-decoration: none; border: var(--wt-hair); border-radius: 8px; padding: 2px 7px; background: rgba(255,255,255,.7); }
+  .wt-acard .refs a:hover { border-color: var(--dsw-alias-state-accent-primary, #0a84ff); background: rgba(10,132,255,.07); }
+  .wt-add { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 11.5px; color: var(--dsw-alias-label-secondary, #4a5b74); }
+  .wt-reel { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base, #eaf1ff); }
+  .wt-reelbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: var(--wt-hair); background: rgba(255,255,255,.94); }
+  .wt-reelbar b { font-size: 12.5px; font-weight: 600; }
+  .wt-reelbar .grow { flex: 1; }
+  .wt-reelbar .path { font-size: 10.5px; color: var(--dsw-alias-label-tertiary, #5b6b83); word-break: break-all; }
+  .wt-reel iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+  .wt-boot { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: var(--wt-rad-lg); background: var(--wt-glass); border: var(--wt-hair); box-shadow: var(--wt-card); }
+  .wt-boot > div { flex: 1; }
+  .wt-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 120; max-width: 84%; padding: 9px 15px; border-radius: var(--wt-rad);
+    border: var(--wt-hair); background: #fff; color: var(--dsw-alias-label-primary, #0b1b33); font-size: 12px; box-shadow: var(--wt-pop); }
+  .wt-toast[data-bad="true"] { border-color: rgba(160,29,21,.5); color: var(--dsw-alias-state-danger, #a01d15); }
+  @media (max-width: 720px) {
+    .dshell { padding: 18px 14px 30px; }
+    .dshell-title { font-size: 25px; }
+    .wt-hero { padding: 18px 16px; }
+    .wt-display { font-size: 26px; }
+    .wt-heroActions { margin-left: 0; width: 100%; }
+    .wt-hero { padding: 18px 16px; }
+    .wt-display { font-size: 26px; }
+    .wt-heroActions { margin-left: 0; width: 100%; }
+    .wt-arch { grid-template-columns: 1fr; }
+    .dshell-table th:nth-child(3), .dshell-table td:nth-child(3),
+    .dshell-table th:nth-child(4), .dshell-table td:nth-child(4) { display: none; }
+    .dshell-table { font-size: 12px; }
+    .dshell-table td.act { white-space: normal; }
+    .dshell-table td.act .dshell-btn { margin: 2px 0 2px 6px; }
+    .wt-add .dshell-input { max-width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    .dshell-btn:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true"><defs id="wt-defs"></defs></svg>
+<div class="dshell" id="app">
+  <div class="wt-boot"><div><b>原型工作台 · 正在加载…</b><div class="dshell-muted">若这行字一直停着，说明页面脚本没执行。</div></div>
+    <button type="button" class="dshell-btn dshell-btnGhost" onclick="location.reload()">重新载入</button></div>
+</div>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ==================== 常量与工具 ==================== */
+var ROOT = "WSROOT";
+var OUT_DIR = "原型产出";
+var LEDGER = "原型台账.json";
+var LEDGER_MD = "原型台账.md";
+var DEMO_SEED = [
+  { id: "20261014-090000", at: "2026-10-14 09:00:00", name: "班组巡检闭环台", kind: "看板",
+    files: ["原型产出/原型-20261014-090000-班组巡检闭环台.html", "原型产出/原型-20261014-090000-班组巡检闭环台-需求单.md"], session: "sess-demo1", status: "已定版", note: "示例记录（?demo=seed）" },
+  { id: "20261014-091000", at: "2026-10-14 09:10:00", name: "设备点检台账", kind: "列表 + 详情",
+    files: ["原型产出/原型-20261014-091000-设备点检台账.html"], session: null, status: "草稿", note: "示例记录（?demo=seed）" }
+];
+var SELF_FILES = ["原型工作台.html", "材料工作台.html", "应用工作台.html", "功能工作台.html", "司库账户全息画像.html", "蓝星应用.html", "拾零集.html"];
+var BUILD = "10-14 14:20 认领整窗";
+var LS = "dsh.worktable.protowb.v1";
+var $ = function (s) { return document.querySelector(s); };
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function icon(n) { return '<svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="#wt-' + n + '"/></svg>'; }
+function toast(msg, bad) {
+  $("#toast").innerHTML = '<div class="wt-toast" data-bad="' + (bad ? "true" : "false") + '">' + esc(msg) + "</div>";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { $("#toast").innerHTML = ""; }, 4200);
+}
+async function api(path, body) {
+  var r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) });
+  var j = null;
+  try { j = await r.json(); } catch (e) { j = null; }
+  if (!r.ok || (j && j.error)) throw new Error((j && j.error) || ("HTTP " + r.status));
+  return j || {};
+}
+function absOf(rel) { return ROOT + "/" + rel; }
+function siteUrl(rel) { return "/api/worktable/site/" + encodeURIComponent(ROOT) + "/" + String(rel).split("/").map(encodeURIComponent).join("/"); }
+function safeRel(rel) {
+  var p = String(rel || "").trim();
+  return !!p && p[0] !== "/" && p.indexOf("..") < 0 && p.indexOf("\\") < 0;
+}
+async function writeFile(rel, content) {
+  if (!safeRel(rel)) throw new Error("路径越界：" + rel);
+  return api("/api/worktable/write", { path: absOf(rel), content: content });
+}
+async function readText(rel) {
+  var r = await fetch("/api/worktable/file?path=" + encodeURIComponent(absOf(rel)) + "&sessionId=", { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return await r.text();
+}
+async function listDir(rel) {
+  var r = await api("/api/worktable/fs", { path: absOf(rel || ".") });
+  return (r.entries || []).filter(function (e) { return !e.isDir && !/^\./.test(e.name) && !/\.bak/i.test(e.name); });
+}
+function cleanName(s) {
+  return String(s || "").trim().replace(/[\/\\:*?"<>|\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24) || "未命名";
+}
+function stamp() {
+  var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+function now() { return new Date().toLocaleString(); }
+function lines(v) { return String(v || "").split("\n").map(function (x) { return x.trim(); }).filter(Boolean); }
+function pairs(v) {
+  return lines(v).map(function (l) {
+    var i = l.indexOf("=");
+    return i < 0 ? { k: l, val: "" } : { k: l.slice(0, i).trim(), val: l.slice(i + 1).trim() };
+  }).filter(function (x) { return x.k; });
+}
+function nums(s) { var m = String(s).match(/-?\d+(\.\d+)?/g); return m ? m.map(Number) : []; }
+function load(k, def) { try { var v = localStorage.getItem(LS + "." + k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+function save(k, v) { try { localStorage.setItem(LS + "." + k, JSON.stringify(v)); } catch (e) {} }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch (e) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+      return true;
+    } catch (e2) { return false; }
+  }
+}
+
+/* ==================== 图标（16×16 线性 SVG） ==================== */
+var SHAPES = {
+  layout: [{ r: [2, 2, 12, 12] }, { p: "M2 6.2h12" }, { p: "M6.6 6.2V14" }],
+  kanban: [{ r: [1.9, 3, 3.4, 10] }, { r: [6.3, 3, 3.4, 7] }, { r: [10.7, 3, 3.4, 9] }],
+  chart: [{ p: "M2.4 13.4h11.2" }, { r: [3.2, 7, 2.2, 4.6] }, { r: [6.9, 4.2, 2.2, 7] }, { r: [10.6, 8.6, 2.2, 3] }],
+  list: [{ p: "M3.2 4.6h9.6M3.2 8h9.6M3.2 11.4h6" }],
+  tool: [{ p: "M10.4 3.2a3.4 3.4 0 0 0-4.5 4.3L2.6 10.8a1.1 1.1 0 0 0 1.6 1.6l3.3-3.3a3.4 3.4 0 0 0 4.3-4.5l-1.9 1.9-1.7-.4-.4-1.7 1.6-1.2Z" }],
+  doc: [{ r: [3, 2, 10, 12] }, { p: "M5.4 5.6h5.2M5.4 8h5.2M5.4 10.4h3.4" }],
+  bulb: [{ p: "M8 2.2a4.2 4.2 0 0 1 2.5 7.6c-.5.4-.8 1-.8 1.6H6.3c0-.6-.3-1.2-.8-1.6A4.2 4.2 0 0 1 8 2.2Z" }, { p: "M6.6 13.4h2.8" }],
+  play: [{ p: "M5.4 3.4l7.2 4.6-7.2 4.6V3.4Z" }],
+  check: [{ p: "M3.6 8.4l2.9 2.9 5.9-6.6" }],
+  plus: [{ p: "M8 3.4v9.2M3.4 8h9.2" }],
+  layers: [{ p: "M8 2.2l5.6 3L8 8.2 2.4 5.2 8 2.2Z" }, { p: "M2.4 8.6L8 11.6l5.6-3" }, { p: "M2.4 11.6L8 14.6l5.6-3" }],
+  refresh: [{ p: "M13 8a5 5 0 1 1-1.6-3.7" }, { p: "M13.2 2.6v2.2H11" }]
+};
+function buildDefs() {
+  var sc = 0.86, t = (16 - 16 * sc) / 2;
+  $("#wt-defs").innerHTML = Object.keys(SHAPES).map(function (k) {
+    var body = SHAPES[k].map(function (s) {
+      if (s.r) return '<rect x="' + s.r[0] + '" y="' + s.r[1] + '" width="' + s.r[2] + '" height="' + s.r[3] + '" rx="2.8"/>';
+      return '<path d="' + s.p + '"/>';
+    }).join("");
+    return '<symbol id="wt-' + k + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">' +
+      '<g transform="translate(' + t + " " + t + ") scale(" + sc + ')">' + body + "</g></symbol>";
+  }).join("");
+}
+
+/* ==================== 形态配方 ==================== */
+var ARCHETYPES = [
+  { id: "form", name: "表单流", icon: "doc", use: "录入、申请、配置——验证字段够不够、填起来顺不顺",
+    sketch: [3, 3, 2], blocks: "标题与说明\n字段组\n必填校验提示\n提交与成功反馈",
+    fields: "名称=示例名称\n说明=一句话说清用途\n数量=12\n负责人=张三", stages: "", content: "",
+    refs: [{ label: "anthropics/skills", url: "https://github.com/anthropics/skills" }, { label: "tabler", url: "https://github.com/tabler/tabler" }] },
+  { id: "kanban", name: "看板", icon: "kanban", use: "任务、工单、审批流转——验证阶段划分与一眼看清进度",
+    sketch: [1, 1, 1], blocks: "阶段列\n任务卡\n新建入口\n每列计数",
+    fields: "", stages: "待处理\n进行中\n已完成", content: "模板改造=李四=周三\n异常统计=王五=周五\n培训材料=赵六=周一",
+    refs: [{ label: "mattpocock/skills", url: "https://github.com/mattpocock/skills" }, { label: "kanban topic", url: "https://github.com/topics/kanban" }] },
+  { id: "dash", name: "仪表盘", icon: "chart", use: "统计、监控、汇报——验证指标口径与主次排序",
+    sketch: [1, 2], blocks: "顶部指标卡\n趋势图\n明细表\n进度条",
+    fields: "今日巡检=48\n异常待处理=6\n闭环率=87\n平均耗时=2.4", stages: "",
+    content: "1月=12\n2月=18\n3月=26\n4月=31\n5月=44\n6月=48",
+    refs: [{ label: "tabler 模板", url: "https://github.com/tabler/tabler" }, { label: "lobehub", url: "https://github.com/lobehub/lobe-chat" }] },
+  { id: "list", name: "列表 + 详情", icon: "list", use: "台账、记录、检索——验证找到东西要几步",
+    sketch: [2, 3], blocks: "搜索框\n记录列表\n详情面板\n操作按钮",
+    fields: "状态=进行中\n责任人=李四\n期限=10-18\n优先级=高", stages: "",
+    content: "巡检异常闭环=09:12\n设备点检记录=10:03\n班组交接台账=11:40\n隐患整改跟踪=13:22",
+    refs: [{ label: "hermes-agent sketch", url: "https://github.com/NousResearch/hermes-agent" }, { label: "supabase", url: "https://github.com/supabase/supabase" }] },
+  { id: "tool", name: "单页工具", icon: "tool", use: "计算器、换算器——验证输入输出口径与一步到位",
+    sketch: [1, 1], blocks: "输入区\n计算按钮\n结果卡\n历史记录",
+    fields: "单价=12.5\n数量=8\n折扣=0.9", stages: "", content: "",
+    refs: [{ label: "prompts.chat", url: "https://github.com/f/prompts.chat" }, { label: "prototyping topic", url: "https://github.com/topics/prototyping" }] }
+];
+function archById(id) { return ARCHETYPES.filter(function (a) { return a.id === id; })[0] || ARCHETYPES[0]; }
+var LAYOUTS = { single: "单栏", split: "左右分栏", grid: "卡片网格" };
+var FAITH = { wire: "线框", mid: "中保真", hi: "接近真实" };
+
+/* ==================== 状态 ==================== */
+var state = {
+  step: load("step", 0),
+  form: load("form", {}),
+  lastOut: load("last", null),
+  ledger: [],
+  ledgerErr: "",
+  cands: [],
+  madePanes: load("panes", [])
+};
+function f(k) { return state.form[k] == null ? "" : state.form[k]; }
+function setF(k, v) { state.form[k] = v; save("form", state.form); }
+function multiOf(k) { return lines(state.form[k]); }
+function toggleMulti(k, v) {
+  var a = multiOf(k), i = a.indexOf(v);
+  if (i < 0) a.push(v); else a.splice(i, 1);
+  setF(k, a.join("\n"));
+}
+
+/* ==================== 向导（4 步） ==================== */
+var STEPS = [
+  { title: "想法与场景", fields: [
+    { k: "idea", label: "一句话想法（也是原型名）", type: "input", req: true, ph: "例：班组巡检闭环台" },
+    { k: "question", label: "这次最想验证什么", type: "input", req: true, ph: "例：字段是不是太多、闭环率看不看得出" },
+    { k: "users", label: "给谁用", type: "input", req: true, ph: "例：一线巡检员 + 车间主任" },
+    { k: "jobs", label: "核心任务（每行一个，按重要度）", type: "textarea", req: true, ph: "新建巡检记录\n标记异常\n查看我的历史" },
+    { k: "first", label: "首屏第一眼要看到 / 点到的", type: "input", ph: "例：今天待办数 + 新建按钮" }
+  ] },
+  { title: "选形态", fields: [
+    { k: "arch", label: "形态（带着配方往下走）", type: "arch", req: true },
+    { k: "faith", label: "保真度", type: "radio", opts: ["wire", "mid", "hi"], labels: ["线框", "中保真", "接近真实"] },
+    { k: "layout", label: "布局", type: "radio", opts: ["single", "split", "grid"], labels: ["单栏", "左右分栏", "卡片网格"] }
+  ] },
+  { title: "内容", fields: [
+    { k: "blocks", label: "必含区块（每行一个）", type: "textarea", req: true },
+    { k: "fields", label: "字段 / 指标（每行「名称=示例值」）", type: "textarea" },
+    { k: "stages", label: "阶段 / 分组（看板用）", type: "textarea" },
+    { k: "content", label: "示例数据（每行「标题=负责人=日期」或「月份=数值」）", type: "textarea" },
+    { k: "copy", label: "文案与术语口径", type: "input", ph: "例：统一叫「闭环」，不出现英文缩写" }
+  ] },
+  { title: "交互与产出", fields: [
+    { k: "inter", label: "关键交互（每行一个）", type: "textarea", ph: "点任务卡流转到下一阶段" },
+    { k: "states", label: "必须做出来的状态", type: "multi", opts: ["正常态", "空态", "加载态", "错误态", "成功提示"] },
+    { k: "accent", label: "强调色", type: "radio", opts: ["#0a84ff", "#127a39", "#9a5b00", "#5e5ce6"] },
+    { k: "next", label: "验证完之后要干什么", type: "input", ph: "例：定稿后做正式应用" }
+  ] }
+];
+function missingIn(step) {
+  return step.fields.filter(function (fd) {
+    if (!fd.req) return false;
+    if (fd.type === "arch") return !f("arch");
+    return !String(f(fd.k) || "").trim();
+  });
+}
+function applyRecipe(a) {
+  if (!f("blocks")) setF("blocks", a.blocks);
+  if (!f("fields") && a.fields) setF("fields", a.fields);
+  if (!f("stages") && a.stages) setF("stages", a.stages);
+  if (!f("content") && a.content) setF("content", a.content);
+}
+
+/* ==================== 原型生成 ==================== */
+var SC_OPEN = "<" + "script>", SC_CLOSE = "</" + "script>";
+var PROTO_CSS = [
+  ':root{color-scheme:light;--dsw-alias-bg-base:#eaf1ff;--dsw-alias-fill-l1:#fff;--dsw-alias-border-l1:#d3e2fb;--dsw-alias-border-l2:#b9d2f6;',
+  '--dsw-alias-label-primary:#0b1b33;--dsw-alias-label-secondary:#4a5b74;--dsw-alias-label-tertiary:#5b6b83;',
+  '--dsw-alias-state-accent-primary:#0a84ff;--dsw-alias-state-danger:#a01d15;--wt-blue:#0060df;--wt-green:#127a39;--wt-orange:#9a5b00;',
+  '--wt-rad:12px;--wt-rad-lg:18px;--wt-hair:1px solid #d3e2fb;--wt-card:0 1px 2px rgba(11,27,51,.05),0 14px 30px -22px rgba(11,27,51,.22);--wt-ease:cubic-bezier(.32,.72,0,1)}',
+  'html,body{background:#eaf1ff}body{color:#0b1b33;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;',
+  'font-size:13px;line-height:1.6;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}',
+  'body::before{content:"";position:fixed;left:0;right:0;top:0;height:420px;z-index:0;pointer-events:none;',
+  'background:radial-gradient(980px 340px at 18% -14%,rgba(10,132,255,.20),transparent 62%),radial-gradient(700px 280px at 90% -10%,rgba(90,200,250,.18),transparent 60%)}',
+  '.dshell{position:relative;z-index:1;display:flex;flex-direction:column;gap:14px;padding:24px 22px 36px;max-width:1000px;margin:0 auto}',
+  '.dshell-title{font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-.032em;margin:0}',
+  '.dshell-sub{font-size:13px;color:var(--dsw-alias-label-secondary);margin:6px 0 0;max-width:68ch}',
+  '.dshell-card,.dshell-stat,.dshell-listItem{border-radius:var(--wt-rad-lg);border:var(--wt-hair);background:rgba(255,255,255,.86);box-shadow:var(--wt-card)}',
+  '.dshell-card{padding:16px 18px}.dshell-stat{padding:14px 16px}.dshell-statLabel{font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
+  '.dshell-statValue{font-size:26px;font-weight:600;letter-spacing:-.03em;color:var(--dsw-alias-state-accent-primary)}',
+  '.dshell-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}',
+  '.dshell-btn{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 13px;font-size:12.5px;font-weight:500;border-radius:var(--wt-rad);',
+  'border:1px solid transparent;color:#fff;cursor:pointer;background:linear-gradient(180deg,#0a84ff,#0060df);box-shadow:0 6px 16px -10px rgba(10,132,255,.85);',
+  'transition:transform .22s var(--wt-ease),filter .22s var(--wt-ease)}.dshell-btn:hover{transform:translateY(-1px)}.dshell-btn:active{transform:none}',
+  '.dshell-btnGhost{background:#fff;color:var(--dsw-alias-label-secondary);border-color:#d3e2fb;box-shadow:none}',
+  '.dshell-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;border-radius:8px;border:var(--wt-hair);background:rgba(255,255,255,.7);',
+  'color:var(--dsw-alias-label-secondary);padding:2px 8px}.dshell-badge::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-state-accent-primary)}',
+  '.dshell-badgeDone{color:var(--wt-green);border-color:rgba(18,122,57,.3);background:rgba(18,122,57,.07)}.dshell-badgeDone::before{background:var(--wt-green)}',
+  '.dshell-badgeWait{color:var(--wt-orange);border-color:rgba(154,91,0,.3);background:rgba(154,91,0,.07)}.dshell-badgeWait::before{background:#b26a00}',
+  '.dshell-input,.dshell-textarea{font:inherit;font-size:12.5px;border-radius:var(--wt-rad);border:var(--wt-hair);background:#fff;color:var(--dsw-alias-label-primary);width:100%;padding:7px 10px}',
+  '.dshell-input:focus,.dshell-textarea:focus{border-color:var(--dsw-alias-state-accent-primary);box-shadow:0 0 0 3px rgba(10,132,255,.16);outline:none}',
+  '.dshell-list{display:flex;flex-direction:column;gap:7px}.dshell-listItem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;font-size:12.5px}',
+  '.dshell-listItemTitle{color:var(--dsw-alias-label-primary)}.dshell-listItemMeta{font-size:11px;color:var(--dsw-alias-label-tertiary)}',
+  '.dshell-kv{display:flex;flex-direction:column;gap:6px}.dshell-kvRow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px}',
+  '.dshell-kvKey{color:var(--dsw-alias-label-secondary);flex:none;max-width:40%}.dshell-kvValue{color:var(--dsw-alias-label-primary);text-align:right;min-width:0;overflow-wrap:anywhere}',
+  '.dshell-table{width:100%;border-collapse:collapse;font-size:12px}.dshell-table th,.dshell-table td{border-bottom:1px solid #d3e2fb;padding:7px 9px;text-align:left}',
+  '.dshell-table th{color:var(--dsw-alias-label-secondary);font-weight:500}.dshell-divider{height:1px;background:#d3e2fb;margin:8px 0}',
+  '.dshell-progress{height:6px;border-radius:999px;background:#dfeaf9;overflow:hidden}.dshell-progressBar{height:100%;border-radius:999px;background:linear-gradient(90deg,#0a84ff,#5e5ce6)}',
+  '.dshell-muted{color:var(--dsw-alias-label-tertiary)}:focus-visible{outline:2px solid var(--dsw-alias-state-accent-primary);outline-offset:2px}',
+  '.pw-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}',
+  '.pw-seg{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.pw-seg button{font-size:11px;height:26px;padding:0 10px;border-radius:8px;border:1px solid #d3e2fb;background:#fff;color:#4a5b74;cursor:pointer}',
+  '.pw-seg button[data-on="true"]{color:var(--wt-blue);border-color:var(--dsw-alias-state-accent-primary);background:rgba(10,132,255,.08)}',
+  '.pw-lay{display:grid;gap:12px}.pw-lay.single{grid-template-columns:1fr}.pw-lay.split{grid-template-columns:minmax(0,1fr) 268px}',
+  '.pw-lay.grid{grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}.pw-side{display:flex;flex-direction:column;gap:12px}',
+  '.pw-kb{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}',
+  '.pw-col{border:var(--wt-hair);border-radius:var(--wt-rad-lg);padding:11px;background:rgba(255,255,255,.86);box-shadow:var(--wt-card);display:flex;flex-direction:column;gap:8px}',
+  '.pw-col h5{margin:0;font-size:11.5px;color:var(--dsw-alias-label-secondary);display:flex;justify-content:space-between;font-weight:600}',
+  '.pw-item{border:1px solid #e2ecfb;border-radius:var(--wt-rad);padding:9px 10px;font-size:12px;cursor:pointer;background:#fff;transition:border-color .22s var(--wt-ease)}',
+  '.pw-item:hover{border-color:var(--dsw-alias-state-accent-primary)}.pw-item small{display:block;color:var(--dsw-alias-label-tertiary);font-size:10px;margin-top:4px}',
+  '.pw-fl{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}.pw-fl label{font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
+  '.pw-ok{font-size:11.5px;color:var(--wt-green);min-height:16px}.pw-bad{font-size:11.5px;color:var(--dsw-alias-state-danger);min-height:16px}',
+  '.pw-bars{display:flex;align-items:flex-end;gap:8px;height:116px;padding:8px 2px 0}.pw-bars span{font-size:9.5px;color:var(--dsw-alias-label-tertiary);text-align:center;display:block;margin-top:4px}',
+  '.pw-res{font-size:28px;font-weight:600;letter-spacing:-.03em;color:var(--dsw-alias-state-accent-primary)}.pw-mut{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+  '.pw-checks{display:flex;flex-direction:column;gap:7px}.pw-check{display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.55;cursor:pointer}',
+  '.pw-check input{margin-top:2px;flex:none}.pw-skel{height:12px;border-radius:6px;background:linear-gradient(90deg,#e4eefb,#f6faff,#e4eefb);background-size:200% 100%;animation:pwsk 1.2s linear infinite}',
+  '@keyframes pwsk{0%{background-position:120% 0}100%{background-position:-120% 0}}.pw-hide{display:none!important}',
+  '.pw-back{position:fixed;top:14px;right:14px;z-index:60}.pw-note{position:fixed;left:14px;bottom:12px;z-index:60;font-size:10.5px;color:var(--dsw-alias-label-tertiary)}',
+  '@media (max-width:760px){.pw-lay.split,.pw-lay.grid{grid-template-columns:1fr}.dshell{padding:18px 14px 30px}.dshell-title{font-size:23px}}',
+  '@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}.dshell-btn:hover{transform:none}}'
+].join("");
+function faithCss(faith, accent) {
+  if (faith === "wire") {
+    return ":root{--dsw-alias-state-accent-primary:#5b6b83;--dsw-alias-label-primary:#1b2433;}" +
+      ".dshell-card,.pw-col,.dshell-stat,.dshell-listItem{border-style:dashed;box-shadow:none;background:#fff}" +
+      ".dshell-btn{background:#fff;color:#1b2433;border:1px dashed #b3c2da;box-shadow:none}" +
+      ".dshell-progressBar{background:#7b8ba3}";
+  }
+  return ":root{--dsw-alias-state-accent-primary:" + (accent || "#0a84ff") + ";}";
+}
+function mockItems(v) {
+  var src = lines(v.content);
+  if (!src.length) src = lines(v.jobs).slice(0, 4).map(function (j) { return j + "=当班人=今天"; });
+  return src.map(function (l) {
+    var p = l.split("=");
+    return { title: p[0] || l, owner: p[1] || "", due: p[2] || "" };
+  });
+}
+function barData(v) {
+  var src = lines(v.content);
+  if (src.length) return src.map(function (l) { var p = l.split("="), n = nums(p[1] || p[0]); return { label: p[0], val: n.length ? n[0] : 0 }; });
+  return pairs(v.fields).map(function (x) { return { label: x.k, val: nums(x.val)[0] || 0 }; });
+}
+function sideHtml(v, archName, layoutName) {
+  var checks = ["结构能看懂，区块顺序合理", "首屏第一眼能看到「" + (v.first || "主任务") + "」", "四种状态都能现场演示", "点下去有反馈，不是静态图", "单文件、无外部依赖、窄屏不破版"];
+  return '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 8px">这块原型在验证什么</h2><div class="dshell-kv">' +
+    '<div class="dshell-kvRow"><span class="dshell-kvKey">想法</span><span class="dshell-kvValue">' + esc(v.idea) + "</span></div>" +
+    '<div class="dshell-kvRow"><span class="dshell-kvKey">验证问题</span><span class="dshell-kvValue">' + esc(v.question) + "</span></div>" +
+    '<div class="dshell-kvRow"><span class="dshell-kvKey">给谁用</span><span class="dshell-kvValue">' + esc(v.users) + "</span></div>" +
+    '<div class="dshell-kvRow"><span class="dshell-kvKey">形态</span><span class="dshell-kvValue">' + esc(archName + " · " + layoutName) + "</span></div>" +
+    '<div class="dshell-kvRow"><span class="dshell-kvKey">口径</span><span class="dshell-kvValue">' + esc(v.copy || "按默认文案") + "</span></div></div></div>" +
+    '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 8px">验收清单</h2><div class="pw-checks">' +
+    checks.map(function (c) { return '<label class="pw-check"><input type="checkbox" />' + esc(c) + "</label>"; }).join("") + "</div></div>" +
+    '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 6px">下一步</h2><p class="dshell-muted" style="margin:0;font-size:11.5px">' +
+    esc(v.next || "看完这一版，把不对的地方说出来，按同一份数据再生成一版。") + "</p></div>";
+}
+function bodyHtml(v, archId) {
+  var items = mockItems(v), fd = pairs(v.fields), st = lines(v.stages).length ? lines(v.stages) : ["待处理", "进行中", "已完成"];
+  if (archId === "form") {
+    return '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 10px">录入</h2><form onsubmit="return false">' +
+      fd.map(function (x, i) {
+        var req = i < 2 ? "1" : "", wide = i % 3 === 1;
+        return '<div class="pw-fl"><label>' + esc(x.k) + (req ? ' <span style="color:#a01d15">*</span>' : "") + "</label>" +
+          (wide ? '<textarea class="dshell-textarea" rows="2" data-req="' + req + '" placeholder="请填写' + esc(x.k) + '">' + esc(x.val) + "</textarea>"
+                : '<input class="dshell-input" data-req="' + req + '" value="' + esc(x.val) + '" placeholder="请填写' + esc(x.k) + '"/>') + "</div>";
+      }).join("") +
+      '<div class="pw-bad" id="pwErr"></div><div class="pw-ok" id="pwOk"></div>' +
+      '<div style="display:flex;gap:8px"><button type="button" class="dshell-btn" data-act="submit">提交</button>' +
+      '<button type="button" class="dshell-btn dshell-btnGhost" data-act="reset">重置</button></div></form></div>';
+  }
+  if (archId === "kanban") {
+    return '<div class="pw-kb">' + st.map(function (s, ci) {
+      var its = items.filter(function (_, i) { return i % st.length === ci; });
+      return '<div class="pw-col" data-col="' + ci + '"><h5>' + esc(s) + "<span class=\"pw-mut\">" + its.length + "</span></h5>" +
+        (its.length ? its.map(function (it) {
+          return '<div class="pw-item" data-move="' + ci + '">' + esc(it.title) +
+            (it.owner || it.due ? "<small>" + esc([it.owner, it.due].filter(Boolean).join(" · ")) + "</small>" : "") + "</div>";
+        }).join("") : '<div class="pw-mut">这一列还空着</div>') + "</div>";
+    }).join("") + "</div>" +
+    '<div class="dshell-card" style="display:flex;gap:8px;align-items:center"><span class="pw-mut">点任务卡流转到下一阶段</span><span style="flex:1"></span>' +
+    '<button type="button" class="dshell-btn dshell-btnGhost" data-act="reset">恢复初始分布</button></div>';
+  }
+  if (archId === "dash") {
+    var bd = barData(v), mx = Math.max.apply(null, bd.map(function (x) { return x.val; }).concat([1]));
+    return '<div class="dshell-grid">' + fd.map(function (x) {
+      return '<div class="dshell-stat"><div class="dshell-statLabel">' + esc(x.k) + '</div><div class="dshell-statValue">' + esc(x.val || "—") + "</div></div>";
+    }).join("") + "</div>" +
+    '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 6px">趋势</h2><div class="pw-bars">' +
+      bd.map(function (x) {
+        return '<div style="flex:1"><div style="height:' + Math.max(4, Math.round((x.val / mx) * 92)) + 'px;background:var(--dsw-alias-state-accent-primary);border-radius:6px 6px 2px 2px"></div><span>' + esc(x.label) + "</span></div>";
+      }).join("") + '</div><div class="pw-mut" style="margin-top:6px">条形高度由示例数据换算，接真实数据后自动变。</div></div>' +
+    '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 8px">明细</h2><table class="dshell-table"><thead><tr><th>事项</th><th>负责人</th><th>期限</th><th>状态</th></tr></thead><tbody>' +
+      items.map(function (it, i) {
+        return "<tr><td>" + esc(it.title) + "</td><td>" + esc(it.owner || "—") + "</td><td>" + esc(it.due || "—") + '</td><td><span class="dshell-badge ' +
+          (i % 3 === 2 ? "dshell-badgeDone" : "dshell-badgeWait") + '">' + esc(st[i % st.length]) + "</span></td></tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+  if (archId === "list") {
+    return '<div class="dshell-card"><input class="dshell-input" data-act="filter" placeholder="搜索记录…"/></div>' +
+    '<div class="pw-lay split"><div class="dshell-card" style="padding:8px"><div class="dshell-list" id="pwList">' +
+      items.map(function (it, i) {
+        return '<div class="dshell-listItem" data-pick="' + i + '" style="cursor:pointer"><span class="dshell-listItemTitle">' + esc(it.title) +
+          '</span><span class="dshell-listItemMeta">' + esc(it.due || it.owner || "") + "</span></div>";
+      }).join("") + "</div></div>" +
+      '<div class="dshell-card" id="pwDetail"><h2 class="dshell-sub" style="margin:0 0 8px">详情</h2><div class="dshell-kv">' +
+      fd.map(function (x, i) {
+        return '<div class="dshell-kvRow"><span class="dshell-kvKey">' + esc(x.k) + '</span><span class="dshell-kvValue" data-d="' + i + '">' + esc(x.val || "—") + "</span></div>";
+      }).join("") + '</div><div class="dshell-divider"></div><div style="display:flex;gap:8px"><button type="button" class="dshell-btn">处理</button>' +
+      '<button type="button" class="dshell-btn dshell-btnGhost">导出</button></div></div></div>';
+  }
+  var inputs = fd.length ? fd : [{ k: "A", val: "12" }, { k: "B", val: "8" }];
+  return '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 10px">输入</h2>' +
+    inputs.map(function (x) {
+      return '<div class="pw-fl"><label>' + esc(x.k) + '</label><input class="dshell-input" type="number" data-num value="' + esc(x.val || "0") + '"/></div>';
+    }).join("") +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="dshell-btn" data-calc="sum">合计</button>' +
+    '<button type="button" class="dshell-btn dshell-btnGhost" data-calc="avg">平均</button>' +
+    '<button type="button" class="dshell-btn dshell-btnGhost" data-calc="max">最大</button></div></div>' +
+    '<div class="dshell-card"><h2 class="dshell-sub" style="margin:0 0 6px">结果</h2><div class="pw-res" id="pwRes">—</div><div class="pw-mut" id="pwHist">还没有计算记录</div></div>';
+}
+function altHtml() {
+  return '<div id="pwAlt" class="pw-hide">' +
+    '<div data-alt="空态" class="pw-hide"><div class="dshell-card" style="text-align:center;padding:34px 16px"><div>这里还没有数据</div>' +
+    '<p class="pw-mut" style="margin:8px 0 14px">空态要给出下一步能干什么，不是「暂无数据」四个字。</p>' +
+    '<div style="display:flex;gap:8px;justify-content:center"><button type="button" class="dshell-btn">新建第一条</button><button type="button" class="dshell-btn dshell-btnGhost">导入上期数据</button></div></div></div>' +
+    '<div data-alt="加载态" class="pw-hide"><div class="dshell-card"><div class="pw-mut" style="margin-bottom:10px">正在读取台账…</div>' +
+    '<div class="pw-skel" style="width:70%"></div><div class="pw-skel" style="width:100%;margin-top:8px"></div><div class="pw-skel" style="width:86%;margin-top:8px"></div>' +
+    '<div class="dshell-progress" style="margin-top:14px"><div class="dshell-progressBar" style="width:42%"></div></div></div></div>' +
+    '<div data-alt="错误态" class="pw-hide"><div class="dshell-card" style="border-color:rgba(160,29,21,.4)">' +
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span class="dshell-badge" style="color:#a01d15;border-color:rgba(160,29,21,.35)">读取失败</span>' +
+    '<span class="pw-mut">数据源不存在或格式不对</span></div><p class="pw-mut" style="margin:0 0 12px">错误态要给可恢复路径。</p>' +
+    '<div style="display:flex;gap:8px"><button type="button" class="dshell-btn" data-act="retry">重试</button><button type="button" class="dshell-btn dshell-btnGhost" data-act="mock">用假数据</button></div></div></div>' +
+    '<div data-alt="成功提示" class="pw-hide"><div class="dshell-card"><span class="dshell-badge dshell-badgeDone">已保存</span> ' +
+    '<span class="pw-mut">记录已写入本地，可以继续补下一条，或回列表查看。</span></div></div></div>';
+}
+function protoScript() {
+  return [
+    SC_OPEN,
+    "var D=document;",
+    "function alt(n){var m=D.getElementById('pwMain'),a=D.getElementById('pwAlt');if(!m||!a)return;",
+    "if(!n||n==='正常态'){m.classList.remove('pw-hide');a.classList.add('pw-hide');return;}",
+    "m.classList.add('pw-hide');a.classList.remove('pw-hide');",
+    "[].forEach.call(a.children,function(c){c.classList.toggle('pw-hide',c.getAttribute('data-alt')!==n)});}",
+    "D.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('[data-state],[data-move],[data-pick],[data-calc],[data-act]'):null;if(!b)return;",
+    "var s=b.getAttribute('data-state');if(s){[].forEach.call(D.querySelectorAll('[data-state]'),function(x){x.setAttribute('data-on',x===b?'true':'false')});alt(s);return;}",
+    "var mv=b.getAttribute('data-move');if(mv!=null){var cols=D.querySelectorAll('.pw-col'),nx=cols[Math.min(Number(mv)+1,cols.length-1)];if(nx)nx.appendChild(b);return;}",
+    "var pk=b.getAttribute('data-pick');if(pk!=null){var it=D.querySelectorAll('#pwList .dshell-listItem'),d=D.querySelectorAll('[data-d]');",
+    "[].forEach.call(it,function(x){x.style.background=x===b?'#eef5ff':''});",
+    "if(d[0])d[0].textContent=(b.querySelector('.dshell-listItemTitle')||{}).textContent||d[0].textContent;return;}",
+    "var cc=b.getAttribute('data-calc');if(cc){var ns=[].map.call(D.querySelectorAll('[data-num]'),function(i){return Number(i.value)||0});",
+    "var r=ns.reduce(function(a,c){return a+c},0);if(cc==='avg')r=ns.length?Math.round(r/ns.length*100)/100:0;if(cc==='max')r=Math.max.apply(null,ns.concat([0]));",
+    "var o=D.getElementById('pwRes'),h=D.getElementById('pwHist');if(o)o.textContent=r;",
+    "if(h)h.textContent=(cc==='sum'?'合计 ':cc==='avg'?'平均 ':'最大 ')+r;return;}",
+    "var ac=b.getAttribute('data-act');",
+    "if(ac==='submit'){var emp=[].filter.call(D.querySelectorAll('[data-req]'),function(i){return !String(i.value||'').trim()});",
+    "var miss=emp.map(function(i){var w=i.closest('.pw-fl');return w?(w.querySelector('label').textContent||'').replace('*','').trim():'';});",
+    "var er=D.getElementById('pwErr'),ok=D.getElementById('pwOk');",
+    "if(er)er.textContent=miss.length?'还有必填没填：'+miss.join('、'):'';if(ok)ok.textContent=miss.length?'':'已提交（原型内本地暂存，未落盘）';",
+    "alt(miss.length?'错误态':'成功提示');return;}",
+    "if(ac==='reset'){[].forEach.call(D.querySelectorAll('input,textarea'),function(i){i.value=i.defaultValue||''});",
+    "var e2=D.getElementById('pwErr'),o2=D.getElementById('pwOk');if(e2)e2.textContent='';if(o2)o2.textContent='';alt('正常态');return;}",
+    "if(ac==='retry'){alt('加载态');return;}if(ac==='mock'){alt('正常态');return;}});",
+    "D.addEventListener('input',function(e){var q=e.target.closest?e.target.closest('[data-act=\"filter\"]'):null;if(!q)return;",
+    "var v=(q.value||'').toLowerCase();[].forEach.call(D.querySelectorAll('#pwList .dshell-listItem'),function(x){",
+    "x.style.display=(x.textContent||'').toLowerCase().indexOf(v)>=0?'':'none';});});",
+    SC_CLOSE
+  ].join("\n");
+}
+function buildPrototype(v) {
+  var A = archById(v.arch), layout = LAYOUTS[v.layout] ? v.layout : "single", faith = FAITH[v.faith] ? v.faith : "mid";
+  var name = cleanName(v.idea || "原型"), accent = v.accent || "#0a84ff", st = v._stamp || stamp();
+  var states = lines(v.states).filter(function (x) { return x !== "正常态"; });
+  var segs = ['<button type="button" data-state="正常态" data-on="true">正常态</button>'].concat(
+    states.map(function (x) { return '<button type="button" data-state="' + esc(x) + '">' + esc(x) + "</button>"; })).join("");
+  return [
+    "<!doctype html>",
+    "<!-- " + esc(name) + " · 原型工作台生成 · " + now() + " -->",
+    '<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>',
+    "<title>" + esc(name) + " · 原型</title>",
+    '<link rel="stylesheet" href="/api/worktable/template/dshell.css"/>',
+    "<style>" + PROTO_CSS + faithCss(faith, accent) + "</style></head><body>",
+    '<div class="dshell">',
+    '<div class="pw-top"><div><h1 class="dshell-title">' + esc(name) + "</h1>",
+    '<p class="dshell-sub">' + esc(v.question || "现场点一点，看结构对不对") + "</p></div>",
+    '<div class="pw-seg"><span class="pw-mut">状态</span>' + segs + "</div></div>",
+    '<div><span class="dshell-badge dshell-badgeWait">' + esc(LAYOUTS[layout]) + '</span> <span class="dshell-badge">' + esc(A.name + " · " + FAITH[faith]) + "</span> " +
+    '<a class="dshell-btn dshell-btnGhost" style="text-decoration:none" href="' + esc(siteUrl(OUT_DIR + "/原型-" + st + "-" + name + "-需求单.md")) + '">需求单</a></div>',
+    '<div class="pw-lay ' + layout + '"><div><div id="pwMain">' + bodyHtml(v, A.id) + "</div>" + altHtml() + "</div>" +
+    (layout === "split" ? '<div class="pw-side">' + sideHtml(v, A.name, LAYOUTS[layout]) + "</div>" : "") + "</div>",
+    layout === "split" ? "" : sideHtml(v, A.name, LAYOUTS[layout]),
+    "</div>",
+    '<a class="dshell-btn pw-back" href="' + esc(siteUrl("原型工作台.html")) + '">返回工作台</a>',
+    '<p class="pw-note">皮肤 /api/worktable/template/dshell.css · 只用 dshell-* 组件类 · 无外部依赖</p>',
+    protoScript(),
+    "</body></html>"
+  ].filter(function (x) { return x !== ""; }).join("\n");
+}
+
+/* ==================== 需求单 ==================== */
+function buildSpec(v, files) {
+  var A = archById(v.arch), md = [];
+  function add() { for (var i = 0; i < arguments.length; i++) md.push(arguments[i]); }
+  function bul(arr, def) { (arr && arr.length ? arr : def || ["（待补）"]).forEach(function (x) { add("- " + x); }); }
+  add("# 原型需求单 · " + (v.idea || "未命名"), "");
+  add("- 生成时间：" + now(), "- 最想验证：" + (v.question || "-"), "- 给谁用：" + (v.users || "-"));
+  add("- 形态：" + A.name + "｜布局：" + (LAYOUTS[v.layout] || "单栏") + "｜保真度：" + (FAITH[v.faith] || "中保真"), "");
+  add("## 要解决的问题", v.idea || "-");
+  if (v.first) add("首屏第一眼：" + v.first);
+  add("", "## 核心任务"); bul(lines(v.jobs));
+  add("", "## 必含区块"); bul(lines(v.blocks), A.blocks.split("\n"));
+  add("", "## 字段与口径"); bul(lines(v.fields), A.fields ? A.fields.split("\n") : ["（未填）"]);
+  add(v.copy ? "文案与术语口径：" + v.copy : "文案与术语口径：按默认");
+  add("", "## 关键交互"); bul(lines(v.inter), ["点下去必须有反馈"]);
+  add("", "## 必须做出来的状态"); bul(lines(v.states), ["正常态", "空态", "加载态", "错误态"]);
+  add("", "## 皮肤约束", "- 单文件 HTML；引 /api/worktable/template/dshell.css", "- 只用 dshell-* 组件类；颜色走 var(--dsw-alias-*)", "- 不引外部 CSS/JS/字体/图片；窄屏不破版");
+  add("", "## 验收清单", "- [ ] 必含区块都可见且顺序合理", "- [ ] 四种状态能现场切出来", "- [ ] 核心任务 3 步内走完", "- [ ] 断网双击能打开");
+  add("", "## 已生成文件"); files.forEach(function (x) { add("- " + absOf(x)); });
+  add("", "## 验证完之后", v.next || "把不对的地方说出来，按同一份数据再生成一版。", "", "## 参考做法（仅思路，不加载外部资源）");
+  A.refs.forEach(function (r) { add("- " + r.label + " → " + r.url); });
+  return md;
+}
+
+/* ==================== 工作台桥：保持一张窗 + 新建会话 ==================== */
+function hosts() {
+  var out = [], w = null;
+  try { w = window; } catch (e) { return out; }
+  for (var i = 0; i < 6 && w; i++) {
+    if (out.indexOf(w) >= 0) break;
+    out.push(w);
+    try { if (w === w.parent) break; w = w.parent; } catch (e) { break; }
+  }
+  try { if (window.top && out.indexOf(window.top) < 0) out.push(window.top); } catch (e) {}
+  return out;
+}
+function hostGet(key) {
+  var hs = hosts();
+  for (var i = 0; i < hs.length; i++) { try { if (hs[i][key]) return hs[i][key]; } catch (e) {} }
+  return null;
+}
+function wtStore() { var g = hostGet("__dshWorktable"); return g && g.splitStore && g.splitStore.spec ? g.splitStore : null; }
+function paneList(spec) {
+  var out = [];
+  if (!spec) return out;
+  if (spec.left) out.push({ row: "left", index: 0, pane: spec.left });
+  (spec.top || []).forEach(function (p, i) { out.push({ row: "top", index: i, pane: p }); });
+  (spec.main || []).forEach(function (p, i) { out.push({ row: "main", index: i, pane: p }); });
+  out.forEach(function (t, i) { t.label = "窗口" + (i + 1); });
+  return out;
+}
+function normUrl(u) {
+  var s = String(u || "").replace(String(location.origin || ""), "");
+  s = s.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, "");
+  try { s = decodeURIComponent(s); } catch (e) {}
+  return s.replace(/[#?].*$/, "").replace(/^\/+|\/+$/g, "");
+}
+function selfPane() {
+  var st = wtStore(); if (!st) return null;
+  var here = normUrl(location.href), list = paneList(st.spec);
+  for (var i = 0; i < list.length; i++) {
+    var tabs = list[i].pane.tabs || [];
+    for (var j = 0; j < tabs.length; j++) {
+      var c = tabs[j].content;
+      if (c && c.kind === "iframe" && normUrl(c.url) === here) return list[i];
+    }
+  }
+  return null;
+}
+/* 本页在宿主里的相对地址（与宿主 buildMountContent 同形） */
+function selfUrl() {
+  return "/api/worktable/site/" + encodeURIComponent(ROOT) + "/" + encodeURIComponent("原型工作台.html");
+}
+function sameUrl(a, b) { return normUrl(a) === normUrl(b); }
+
+/* 认领"装着本页的那个窗"：标题与激活标签内容都写回本页，别的窗一律不碰 */
+function claimPane(name) {
+  var st = wtStore();
+  if (!st || !st.spec) return { ok: false, msg: "没接上工作台布局" };
+  var me = selfPane();
+  if (!me) {
+    var list = paneList(st.spec);
+    if (list.length === 1) me = list[0];
+    else return { ok: false, msg: "没找到装着本页的窗格" };
+  }
+  var mine = selfUrl(), here = normUrl(location.href);
+  var tabs = me.pane.tabs || [];
+  var matchIdx = -1;
+  for (var i = 0; i < tabs.length; i++) {
+    var c = tabs[i].content;
+    if (c && c.kind === "iframe" && (sameUrl(c.url, mine) || sameUrl(c.url, here))) { matchIdx = i; break; }
+  }
+  var active = ((me.pane.active == null ? 0 : me.pane.active) | 0);
+  var target = matchIdx >= 0 ? matchIdx : (tabs.length ? active : -1);
+  var changed = false;
+  var nextTabs = tabs.map(function (t, i) {
+    if (i !== target) return t;
+    var c = t.content;
+    var okUrl = c && c.kind === "iframe" && sameUrl(c.url, mine);
+    if (t.title === name && okUrl) return t;
+    changed = true;
+    return Object.assign({}, t, { title: name, content: { kind: "iframe", url: mine, title: name } });
+  });
+  if (!nextTabs.length) { nextTabs = [{ id: "t" + Date.now().toString(36), title: name, content: { kind: "iframe", url: mine, title: name } }]; changed = true; }
+  if (me.pane.title !== name) changed = true;
+  if (!changed) return { ok: true, changed: false };
+  var nextPane = Object.assign({}, me.pane, { title: name, tabs: nextTabs, active: target < 0 ? 0 : target });
+  var next = Object.assign({}, st.spec);
+  if (me.row === "left") next.left = nextPane;
+  else { var arr = (st.spec[me.row] || []).slice(); arr[me.index] = nextPane; next[me.row] = arr; }
+  commitSpec(st, next);
+  return { ok: true, changed: true };
+}
+/* 兼容旧名 */
+function claimTitle(name) { return claimPane(name); }
+
+function commitSpec(st, next) {
+  st.spec = next;
+  try { st.onSpecMutated && st.onSpecMutated(next); } catch (e) {}
+  try { st.persist && st.persist(); } catch (e) {}
+  try { st.notify && st.notify(); } catch (e) {}
+}
+function extraPanes() {
+  var st = wtStore(); if (!st || !st.spec) return null;
+  var list = paneList(st.spec), mine = selfPane();
+  var keepId = mine ? mine.pane.id : (list[0] && list[0].pane.id);
+  var hits = list.filter(function (t) {
+    if (t.pane.id === keepId) return false;
+    var proto = (t.pane.tabs || []).some(function (x) {
+      return normUrl(x.content && x.content.url).indexOf(OUT_DIR + "/") >= 0;
+    });
+    return proto || state.madePanes.indexOf(t.pane.id) >= 0;
+  });
+  return { all: list, hits: hits };
+}
+function prunePanes() {
+  var st = wtStore();
+  if (!st || !st.spec) return { ok: false, msg: "没接上工作台布局" };
+  var w = extraPanes();
+  if (!w) return { ok: false, msg: "读不到窗格" };
+  if (!w.hits.length) return { ok: true, removed: 0 };
+  var ids = {}; w.hits.forEach(function (t) { ids[t.pane.id] = 1; });
+  var main = (st.spec.main || []).filter(function (p) { return !ids[p.id]; });
+  var top = (st.spec.top || []).filter(function (p) { return !ids[p.id]; });
+  if (!main.length && !top.length) return { ok: false, msg: "收掉就没窗了，保留现状" };
+  commitSpec(st, Object.assign({}, st.spec, { main: main, top: top.length ? top : null }));
+  state.madePanes = state.madePanes.filter(function (x) { return !ids[x]; });
+  save("panes", state.madePanes);
+  return { ok: true, removed: w.hits.length };
+}
+function taskText(rel, specRel) {
+  var v = state.form;
+  return ["目标：把「" + (v.idea || "这个原型") + "」从原型推进成能用的应用。",
+    "原型文件：" + absOf(rel),
+    "需求单：" + absOf(specRel),
+    "最想验证：" + (v.question || "-"),
+    "给谁用：" + (v.users || "-"),
+    "产出要求：单文件 HTML，用 /api/worktable/template/dshell.css 皮肤、只用 dshell-* 组件类、不引外部资源，文件放进项目文件夹。"
+  ].join("\n");
+}
+async function newSession(text) {
+  var env = hostGet("__dshCustomEnv"), custom = env && env.custom, err = "", st = wtStore();
+  var pid = st && st.spec ? st.spec.id : null, pname = (st && st.spec && st.spec.title) || "本项目";
+  if (custom && typeof custom.submit === "function") {
+    try {
+      var me = selfPane();
+      var sid = await custom.submit(pid, pname, text, { kind: "none" }, me ? me.label : "");
+      return { ok: true, sessionId: sid, via: "工作台" };
+    } catch (e) { err = String(e && e.message || e); }
+  }
+  var sessions = hostGet("__dshSessions"), prompt = hostGet("__dshPromptIntoSession");
+  if (!sessions || typeof sessions.create !== "function" || typeof prompt !== "function") {
+    return { ok: false, msg: "没拿到会话接口" + (err ? "（插件通道：" + err + "）" : "") };
+  }
+  try {
+    var r = await sessions.create({ cwd: ROOT });
+    var sid2 = typeof r === "string" ? r : ((r && (r.sessionId || r.id)) || "");
+    if (!sid2) return { ok: false, msg: "sessions.create 没返回会话 id" };
+    await prompt(sid2, text);
+    try { var op = hostGet("__dshOpenSession"); if (op) await op(sid2); } catch (e2) {}
+    return { ok: true, sessionId: sid2, via: "宿主" };
+  } catch (e3) { return { ok: false, msg: String(e3 && e3.message || e3) + (err ? "；插件通道：" + err : "") }; }
+}
+
+/* ==================== 台账 ==================== */
+async function loadLedger() {
+  state.ledgerErr = "";
+  try {
+    var j = JSON.parse(await readText(LEDGER));
+    state.ledger = Array.isArray(j) ? j : [];
+  } catch (e) {
+    state.ledger = [];
+    if (!/HTTP 404|HTTP 4/.test(String(e.message))) state.ledgerErr = "读台账失败：" + e.message;
+  }
+  return state.ledger;
+}
+function ledgerMd(rows) {
+  var out = ["# 原型台账", "", "- 更新时间：" + now(), "- 共 " + rows.length + " 条", "",
+    "| 时间 | 原型 | 形态 | 会话 | 状态 | 产出 |", "| --- | --- | --- | --- | --- | --- |"];
+  rows.forEach(function (x) {
+    out.push("| " + x.at + " | " + x.name + " | " + (x.kind || "-") + " | " + (x.session || "—") + " | " + (x.status || "草稿") + " | " +
+      (x.files || []).map(function (p) { return absOf(p); }).join("<br>") + " |");
+  });
+  return out.join("\n");
+}
+async function saveLedger() {
+  await writeFile(LEDGER, JSON.stringify(state.ledger, null, 2));
+  await writeFile(LEDGER_MD, ledgerMd(state.ledger));
+}
+async function addLedger(rec) {
+  state.ledger = [rec].concat(state.ledger).slice(0, 300);
+  await saveLedger();
+}
+function findLedger(id) { return state.ledger.filter(function (x) { return x.id === id; })[0] || null; }
+async function scanCandidates() {
+  var have = {};
+  state.ledger.forEach(function (x) { (x.files || []).forEach(function (p) { have[p] = 1; }); });
+  var out = [];
+  try {
+    (await listDir(OUT_DIR)).forEach(function (e) {
+      if (!/\.html$/i.test(e.name) || SELF_FILES.indexOf(e.name) >= 0) return;
+      var rel = OUT_DIR + "/" + e.name;
+      if (have[rel]) return;
+      out.push({ rel: rel, name: e.name.replace(/^原型-\d{8}-\d{6}-/, "").replace(/\.html$/i, "") });
+    });
+  } catch (e) {}
+  state.cands = out;
+  return out;
+}
+
+/* ==================== 生成 ==================== */
+async function ensureDir() {
+  try { await api("/api/worktable/mkdir", { path: absOf(OUT_DIR) }); return true; }
+  catch (e) { if (/exist|EEXIST|已存在/i.test(String(e.message))) return true; state.ledgerErr = "建目录失败：" + e.message; return false; }
+}
+async function generate() {
+  var v = state.form;
+  for (var i = 0; i <= state.step; i++) { if (!validate(i)) { state.step = i; render(); return; } }
+  var name = cleanName(v.idea || "原型"), st = stamp();
+  if (!(await ensureDir())) { toast(state.ledgerErr, true); return; }
+  try {
+    var rel = OUT_DIR + "/原型-" + st + "-" + name + ".html";
+    var specRel = OUT_DIR + "/原型-" + st + "-" + name + "-需求单.md";
+    await writeFile(rel, buildPrototype(Object.assign({}, v, { _stamp: st })));
+    await writeFile(specRel, buildSpec(v, [rel, specRel]).join("\n"));
+    state.lastOut = { stamp: st, name: name, rel: rel, spec: specRel, at: now() };
+    save("last", state.lastOut);
+    var s2 = await newSession(taskText(rel, specRel));
+    await addLedger({ id: st, at: state.lastOut.at, name: name, kind: archById(v.arch).name,
+      files: [rel, specRel], session: s2.ok ? s2.sessionId : null, status: "草稿", note: v.question || "" });
+    var pr = prunePanes();
+    await scanCandidates();
+    toast("已生成 · 已记台账" + (s2.ok ? " · 新会话已开" : " · 会话没开成：" + (s2.msg || "桥不可用")), !s2.ok);
+    render();
+  } catch (e) { toast("写入失败：" + e.message, true); }
+}
+
+/* ==================== 放映 ==================== */
+function showReel(rel, title) {
+  closeReel();
+  var d = document.createElement("div");
+  d.className = "wt-reel"; d.id = "wtReel";
+  d.innerHTML = '<div class="wt-reelbar">' + icon("play") + "<b>" + esc(title || "原型放映") + "</b>" +
+    '<span class="path">' + esc(rel) + '</span><span class="grow"></span>' +
+    '<button type="button" class="dshell-btn" data-reel-close="1">返回工作台</button></div>' +
+    '<iframe src="' + esc(siteUrl(rel)) + '" title="' + esc(title || "原型") + '"></iframe>';
+  document.body.appendChild(d);
+}
+function closeReel() { var d = document.getElementById("wtReel"); if (d && d.parentNode) d.parentNode.removeChild(d); }
+
+/* ==================== 渲染 ==================== */
+function fieldHtml(fd) {
+  var val = f(fd.k);
+  if (fd.type === "arch") {
+    var cur = f("arch");
+    return '<div class="wt-field"><label>' + esc(fd.label) + ' <span class="req">*</span></label><div class="wt-arch">' +
+      ARCHETYPES.map(function (a) {
+        return '<div class="wt-acard" data-on="' + (a.id === cur ? "true" : "false") + '"><h4>' + icon(a.icon) + esc(a.name) +
+          (a.id === cur ? ' <span class="dshell-badge dshell-badgeDone">已选</span>' : "") + "</h4>" +
+          '<div class="sk">' + a.sketch.map(function (x) { return '<i style="flex:' + x + '"></i>'; }).join("") + "</div>" +
+          "<p>" + esc(a.use) + "</p>" +
+          '<div class="refs">' + a.refs.map(function (r) {
+            return '<a href="' + esc(r.url) + '" data-ext="' + esc(r.url) + '" rel="noopener">' + esc(r.label) + "</a>";
+          }).join("") + "</div>" +
+          '<div><button type="button" class="dshell-btn' + (a.id === cur ? " dshell-btnGhost" : "") + '" data-f="arch" data-v="' + a.id + '">' +
+          (a.id === cur ? "已选" : "选这个") + "</button></div></div>";
+      }).join("") + "</div></div>";
+  }
+  if (fd.type === "radio") {
+    return '<div class="wt-field"><label>' + esc(fd.label) + '</label><div class="wt-opts">' +
+      fd.opts.map(function (o, i) {
+        var lab = fd.labels ? fd.labels[i] : o;
+        return '<button type="button" class="dshell-btn dshell-btnGhost" data-on="' + ((val || fd.opts[0]) === o ? "true" : "false") + '" data-f="' + fd.k + '" data-v="' + esc(o) + '">' + esc(lab) + "</button>";
+      }).join("") + "</div></div>";
+  }
+  if (fd.type === "multi") {
+    var arr = multiOf(fd.k);
+    return '<div class="wt-field"><label>' + esc(fd.label) + '</label><div class="wt-opts">' +
+      fd.opts.map(function (o) {
+        return '<button type="button" class="dshell-btn dshell-btnGhost" data-on="' + (arr.indexOf(o) >= 0 ? "true" : "false") + '" data-multi="' + fd.k + '" data-v="' + esc(o) + '">' + esc(o) + "</button>";
+      }).join("") + "</div></div>";
+  }
+  if (fd.type === "textarea") {
+    return '<div class="wt-field"><label>' + esc(fd.label) + (fd.req ? ' <span class="req">*</span>' : "") + '</label><textarea class="dshell-textarea" rows="4" data-f="' + fd.k + '" placeholder="' + esc(fd.ph || "") + '">' + esc(val) + "</textarea></div>";
+  }
+  return '<div class="wt-field"><label>' + esc(fd.label) + (fd.req ? ' <span class="req">*</span>' : "") + '</label><input class="dshell-input" data-f="' + fd.k + '" value="' + esc(val) + '" placeholder="' + esc(fd.ph || "") + '"/></div>';
+}
+function wizardHtml() {
+  var total = STEPS.length, cur = Math.min(state.step, total - 1), step = STEPS[cur];
+  return '<div class="dshell-card"><div class="wt-head">' + icon("layout") + "<b>原型向导</b>" +
+    '<span class="grow"></span>' + (state.cands.length ? '<span class="dshell-badge">' + state.cands.length + ' 个产出未列入</span>' : "") + "</div>" +
+    '<div class="wt-steps">' + STEPS.map(function (s, i) {
+      return '<button type="button" class="wt-step" data-on="' + (i === cur ? "true" : "false") + '" data-done="' + (i < cur ? "true" : "false") + '" data-goto="' + i + '">' +
+        "<i>" + (i < cur ? icon("check") : i + 1) + "</i>" + esc(s.title) + "</button>";
+    }).join("") + "</div>" +
+    '<div class="dshell-progress" style="margin-bottom:12px"><div class="dshell-progressBar" style="width:' + Math.round(((cur + 1) / total) * 100) + '%"></div></div>' +
+    step.fields.map(fieldHtml).join("") +
+    '<div class="wt-err" id="werr"></div>' +
+    '<div class="wt-nav">' + (cur > 0 ? '<button type="button" class="dshell-btn dshell-btnGhost" data-nav="-1">上一步</button>' : "") +
+    '<span class="grow"></span>' +
+    (cur < total - 1 ? '<button type="button" class="dshell-btn" data-nav="1">下一步</button>'
+      : '<button type="button" class="dshell-btn" data-gen="1">' + icon("plus") + " 生成原型</button>") +
+    "</div></div>";
+}
+function ledgerHtml() {
+  var rows = state.ledger, w = extraPanes();
+  var bar = state.cands.length
+    ? '<div class="wt-add">' + icon("bulb") + "还有 " + state.cands.length + " 个原型未列入" +
+      '<select class="dshell-input" id="ledSel" style="width:auto;max-width:340px">' +
+      state.cands.map(function (c) { return '<option value="' + esc(c.rel) + '">' + esc(c.rel) + "</option>"; }).join("") + "</select>" +
+      '<button type="button" class="dshell-btn dshell-btnGhost" data-act="add-one">加入</button>' +
+      '<button type="button" class="dshell-btn dshell-btnGhost" data-act="add-all">全部加入</button>' +
+      '<button type="button" class="dshell-btn dshell-btnGhost" data-act="rescan">重新扫描</button></div>'
+    : "";
+  var body = rows.length
+    ? '<div class="wt-scroll"><table class="dshell-table"><thead><tr><th>时间</th><th>原型</th><th>形态</th><th>会话</th><th>状态</th><th></th></tr></thead><tbody>' +
+      rows.map(function (x) {
+        return "<tr><td>" + esc(x.at) + "</td><td><b>" + esc(x.name) + "</b></td><td>" + esc(x.kind || "—") + "</td><td>" +
+          esc(x.session ? String(x.session).slice(0, 8) : "—") + '</td><td><span class="dshell-badge ' +
+          (x.status === "已定版" ? "dshell-badgeDone" : "dshell-badgeWait") + '">' + esc(x.status || "草稿") + "</span></td>" +
+          '<td class="act"><button type="button" class="dshell-btn dshell-btnGhost" data-reel="' + esc(((x.files || [])[0] || "") + "|@|" + x.name) + '">放映</button> ' +
+          '<button type="button" class="dshell-btn dshell-btnGhost" data-keep="' + esc(x.id) + '">定版</button> ' +
+          '<button type="button" class="dshell-btn dshell-btnGhost" data-del="' + esc(x.id) + '">删记录</button></td></tr>';
+      }).join("") + "</tbody></table></div>"
+    : '<div class="dshell-muted">' + esc(state.ledgerErr || "还没有原型。走完向导点「生成原型」，这里出现第一条。") + "</div>";
+  return '<div class="dshell-card"><div class="wt-head">' + icon("layers") + "<b>我的原型</b>" +
+    '<span class="dshell-badge">' + rows.length + ' 条</span><span class="grow"></span>' +
+    (w && w.hits.length ? '<button type="button" class="dshell-btn dshell-btnGhost" data-act="prune">收窗 ' + w.hits.length + "</button>" : "") + "</div>" +
+    bar + body + "</div>";
+}
+function render() {
+  $("#app").innerHTML = heroHtml() + wizardHtml() + ledgerHtml();
+}
+function heroHtml() {
+  return '<section class="wt-hero"><div class="wt-brand">' +
+    '<span class="wt-mark">' + icon("layers") + '</span><span class="wt-brandName">原型工作台</span>' +
+    '<span class="wt-pill">' + esc(BUILD) + "</span>" +
+    '<span class="wt-heroActions"><button type="button" class="dshell-btn dshell-btnGhost" data-act="reload">' + icon("refresh") + " 刷新</button></span></div>" +
+    '<h1 class="wt-display">把想法<em>点成能跑的原型</em></h1></section>';
+}
+
+/* ==================== 校验与事件 ==================== */
+function validate(i) {
+  var miss = missingIn(STEPS[i]), el = $("#werr");
+  if (!miss.length) { if (el) el.textContent = ""; return true; }
+  if (el) el.textContent = "这一步还差必填：" + miss.map(function (m) { return m.label; }).join("、");
+  toast("必填没填完", true);
+  return false;
+}
+document.addEventListener("input", function (e) {
+  var k = e.target.getAttribute && e.target.getAttribute("data-f");
+  if (k) setF(k, e.target.value);
+});
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeReel(); });
+document.addEventListener("click", async function (e) {
+  var el = e.target.closest ? e.target.closest("[data-f],[data-multi],[data-nav],[data-goto],[data-gen],[data-reel],[data-reel-close],[data-ext],[data-keep],[data-del],[data-act]") : null;
+  if (!el) return;
+  var k = el.getAttribute("data-f");
+  if (k && el.dataset.v != null) {
+    setF(k, el.dataset.v);
+    if (k === "arch") applyRecipe(archById(el.dataset.v));
+    render(); return;
+  }
+  var mk = el.getAttribute("data-multi");
+  if (mk) { toggleMulti(mk, el.dataset.v); render(); return; }
+  var nav = el.getAttribute("data-nav");
+  if (nav) {
+    var d = Number(nav);
+    if (d > 0 && !validate(state.step)) return;
+    state.step = Math.max(0, Math.min(STEPS.length - 1, state.step + d)); save("step", state.step); render(); return;
+  }
+  var go = el.getAttribute("data-goto");
+  if (go != null) { state.step = Number(go); save("step", state.step); render(); return; }
+  if (el.hasAttribute("data-gen")) { await generate(); return; }
+  var reel = el.getAttribute("data-reel");
+  if (reel) { var rp = reel.split("|@|"); showReel(rp[0], rp[1]); return; }
+  if (el.hasAttribute("data-reel-close")) { closeReel(); return; }
+  var ext = el.getAttribute("data-ext");
+  if (ext) {
+    var opened = false;
+    try { opened = !!window.open(ext, "_blank", "noopener"); } catch (e2) { opened = false; }
+    if (!opened) { var okc = await copyText(ext); toast(okc ? "弹窗被拦，链接已复制" : "链接：" + ext, !okc); }
+    return;
+  }
+  var keep = el.getAttribute("data-keep");
+  if (keep) {
+    var x = findLedger(keep);
+    if (x) { x.status = "已定版"; await saveLedger(); render(); toast("已定版：" + x.name); }
+    return;
+  }
+  var del = el.getAttribute("data-del");
+  if (del) {
+    state.ledger = state.ledger.filter(function (y) { return y.id !== del; });
+    await saveLedger(); await scanCandidates(); render(); toast("已移除记录（文件保留）");
+    return;
+  }
+  var act = el.getAttribute("data-act");
+  if (act === "reload") { await Promise.all([loadLedger(), scanCandidates()]); render(); toast("已刷新"); return; }
+  if (act === "prune") {
+    var pr = prunePanes();
+    toast(pr.ok ? (pr.removed ? "已收掉 " + pr.removed + " 个多余窗" : "本来就只有一张窗") : "收窗失败：" + pr.msg, !pr.ok);
+    render(); return;
+  }
+  if (act === "rescan") { await scanCandidates(); render(); toast(state.cands.length ? "发现 " + state.cands.length + " 个未列入原型" : "没有未列入的原型"); return; }
+  if (act === "add-one" || act === "add-all") {
+    var sel = document.getElementById("ledSel");
+    var pick = act === "add-all" ? state.cands.slice() : state.cands.filter(function (c) { return sel && c.rel === sel.value; });
+    if (!pick.length) { toast("没有可加入的项", true); return; }
+    for (var i = 0; i < pick.length; i++) {
+      await addLedger({ id: "reg-" + Date.now().toString(36) + "-" + i, at: now(), name: pick[i].name, kind: "已有原型",
+        files: [pick[i].rel], session: null, status: "草稿", note: "" });
+    }
+    await scanCandidates(); render();
+    toast(pick.length === 1 ? "已加入：" + pick[0].name : "已加入 " + pick.length + " 个原型");
+    return;
+  }
+});
+
+/* ==================== 启动（含验收用 demo 参数） ==================== */
+function demoMode() {
+  var m = (location.search || "").match(/demo=(\w+)/);
+  return m ? m[1] : "";
+}
+function applyDemo() {
+  var d = demoMode();
+  if (d === "empty") { state.ledger = []; state.cands = []; return true; }
+  if (d === "seed") { state.ledger = DEMO_SEED.slice(); state.cands = []; return true; }
+  return false;
+}
+
+window.__bs = { ready: false, build: BUILD, ledger: 0, cands: 0, panes: 0, step: state.step, err: "" };
+buildDefs();
+render();
+(async function () {
+  if (!applyDemo()) await Promise.all([loadLedger(), scanCandidates()]);
+  render();
+  var pr = prunePanes();
+  if (pr.ok && pr.removed) toast("已收掉 " + pr.removed + " 个多余窗，本工作台只留一张");
+  claimPane("原型工作台");
+  var st = wtStore();
+  window.__bs.ledger = state.ledger.length;
+  window.__bs.cands = state.cands.length;
+  window.__bs.panes = st && st.spec ? paneList(st.spec).length : 0;
+  var mine = selfPane();
+  window.__bs.paneTitle = mine ? (mine.pane.title || "") : "";
+  var at = mine && mine.pane.tabs ? (mine.pane.tabs[((mine.pane.active == null ? 0 : mine.pane.active) | 0)] || {}) : {};
+  window.__bs.tabTitle = String(at.title || "");
+  window.__bs.tabUrl = String((at.content && at.content.url) || "");
+  window.__bs.ready = true;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1332 @@
+<!doctype html>
+<!-- 应用工作台 · 窗口1 主页
+     皮肤：dsh-worktable 官方皮肤 dshell.css；本文件只追加一层「科技苹果风」微调（细描边/大圆角/留白/线性图标）。
+     产出物一律写进项目文件夹，接口全部同源：/api/worktable/fs | write | mkdir | file | site -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>应用工作台</title>
+<link rel="stylesheet" href="/api/worktable/template/dshell.css" />
+<style>
+  /* —— 科技蓝 · 官网级视觉层 ——
+     只重定义 dshell 皮肤变量 + 组件质感；图标仍是苹果线性规格；不引任何外部资源。 */
+  :root {
+    color-scheme: light;
+    --dsw-alias-bg-base: #eaf1ff;
+    --dsw-alias-fill-l1: #ffffff;
+    --dsw-alias-border-l1: #d3e2fb;
+    --dsw-alias-border-l2: #a9c8f5;
+    --dsw-alias-label-primary: #0a1b33;
+    --dsw-alias-label-secondary: #4b6285;
+    --dsw-alias-label-tertiary: #54698a;
+    --dsw-alias-state-accent-primary: #0a84ff;
+    --dsw-alias-state-danger: #ff3b30;
+    --wt-danger-text: #a01d15;
+    --wt-ink: #06132a; --wt-ink-2: #1c3357;
+    --wt-blue: #0a84ff; --wt-blue-d: #0060df; --wt-cyan: #5ac8fa; --wt-indigo: #5e5ce6; --wt-mint: #127a39;
+    --wt-rad: 18px; --wt-rad-lg: 26px; --wt-rad-sm: 12px;
+    --wt-hair: 1px solid var(--dsw-alias-border-l1, #d3e2fb);
+    --wt-glass: saturate(190%) blur(22px);
+    --wt-shadow-1: 0 1px 2px rgba(6,19,42,.05), 0 12px 28px -20px rgba(10,80,190,.38);
+    --wt-shadow-2: 0 2px 6px rgba(6,19,42,.06), 0 34px 70px -34px rgba(10,80,190,.5);
+    --wt-grad-brand: linear-gradient(94deg, #0a84ff 0%, #5ac8fa 46%, #5e5ce6 100%);
+    --wt-ring: 0 0 0 4px rgba(10,132,255,.16);
+    --wt-ease: cubic-bezier(.32,.72,0,1);
+    --wt-ink-icon: #0a84ff;
+  }
+  html { background: #eaf1ff; }
+  body {
+    position: relative; min-height: 100vh; margin: 0;
+    background: linear-gradient(180deg, #f4f8ff 0%, #e4eeff 100%);
+    color: var(--dsw-alias-label-primary, #0a1b33);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Segoe UI", sans-serif;
+    font-size: 13px; -webkit-font-smoothing: antialiased; letter-spacing: -.01em;
+  }
+  /* 品牌光雾 + 极淡网格（纯 CSS，无图片） */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(1200px 620px at 84% -10%, rgba(10,132,255,.30), transparent 62%),
+      radial-gradient(760px 420px at 4% 6%, rgba(90,200,250,.24), transparent 58%),
+      radial-gradient(900px 560px at 46% 116%, rgba(94,92,230,.20), transparent 60%);
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+    background:
+      linear-gradient(rgba(10,60,140,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,60,140,.05) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(1100px 620px at 50% 0%, #000 20%, transparent 78%);
+    mask-image: radial-gradient(1100px 620px at 50% 0%, #000 20%, transparent 78%);
+  }
+  .dshell { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 26px; padding: 30px 24px 44px; max-width: 1000px; margin: 0 auto; }
+  /* —— 品牌区 / Hero —— */
+  .wt-hero { position: relative; overflow: hidden; padding: 26px 28px 24px; border: var(--wt-hair); border-radius: var(--wt-rad-lg); background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.68)); -webkit-backdrop-filter: var(--wt-glass); backdrop-filter: var(--wt-glass); box-shadow: var(--wt-shadow-2); }
+  .wt-hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.9) 30%, rgba(255,255,255,.9) 70%, transparent); }
+  .wt-hero::after { content: ""; position: absolute; right: -90px; top: -120px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(10,132,255,.22), transparent 62%); pointer-events: none; }
+  .wt-brand { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .wt-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--wt-grad-brand); color: #fff; box-shadow: 0 8px 18px -10px rgba(10,132,255,.95); }
+  .wt-mark .ic { color: #fff; font-size: 16px; }
+  .wt-brandName { font-size: 13px; font-weight: 600; letter-spacing: -.012em; }
+  .wt-pill { padding: 3px 10px; border-radius: 999px; border: var(--wt-hair); background: rgba(255,255,255,.7); font-size: 10.5px; font-weight: 500; color: var(--dsw-alias-label-secondary, #4b6285); font-variant-numeric: tabular-nums; }
+  .wt-heroActions { display: flex; gap: 8px; margin-left: auto; }
+  .wt-display { position: relative; margin: 20px 0 0; font-size: 34px; line-height: 1.08; font-weight: 600; letter-spacing: -.035em; max-width: 22em; color: var(--wt-ink); }
+  .wt-display em { font-style: normal; color: var(--wt-blue); }
+  .wt-lead { position: relative; margin: 12px 0 0; max-width: 62ch; font-size: 13.5px; line-height: 1.7; color: var(--dsw-alias-label-secondary, #4b6285); }
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .wt-display em { background: var(--wt-grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  }
+  /* 分段统计条（官网常见的 stat bar） */
+  .wt-stats { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); margin-top: 24px; border: var(--wt-hair); border-radius: 16px; overflow: hidden; background: var(--dsw-alias-border-l1, #d3e2fb); gap: 1px; }
+  .wt-stats .dshell-stat { border: none; border-radius: 0; box-shadow: none; background: rgba(255,255,255,.9); padding: 12px 14px; }
+  .wt-stats .dshell-statLabel { font-size: 10.5px; letter-spacing: .04em; color: var(--dsw-alias-label-tertiary, #54698a); }
+  .wt-stats .dshell-statValue { margin-top: 2px; font-size: 24px; color: var(--wt-blue); }
+  .wt-stats .dshell-statValue[data-plain="true"] { font-size: 13px; letter-spacing: -.01em; color: var(--dsw-alias-label-primary, #0a1b33); }
+  /* —— 章节 —— */
+  .wt-sec { display: flex; flex-direction: column; gap: 12px; }
+  .wt-eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--wt-blue); }
+  .wt-h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.024em; color: var(--wt-ink); }
+  .wt-secHead { display: flex; flex-direction: column; gap: 3px; }
+  .wt-secHead .dshell-muted { font-size: 12px; }
+  /* —— 卡片与列表 —— */
+  .dshell-card, .dshell-listItem { border-radius: var(--wt-rad); border: var(--wt-hair); box-shadow: var(--wt-shadow-1); }
+  .dshell-card { position: relative; padding: 18px 20px; background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.76)); -webkit-backdrop-filter: var(--wt-glass); backdrop-filter: var(--wt-glass); }
+  .dshell-listItem { background: rgba(255,255,255,.86); transition: background .18s var(--wt-ease), border-color .18s var(--wt-ease), transform .18s var(--wt-ease), box-shadow .18s var(--wt-ease); }
+  .dshell-listItem:hover { background: #fff; border-color: var(--wt-blue); transform: translateY(-1px); box-shadow: 0 1px 2px rgba(6,19,42,.05), 0 16px 30px -22px rgba(10,80,190,.5); }
+  .dshell-listItem:hover .dshell-listItemMeta { color: var(--wt-blue-d); }
+  .dshell-listItem a { text-decoration: none; }
+  .dshell-listItem a:hover { text-decoration: underline; }
+  /* —— 分段控件 —— */
+  .dshell-tabs { display: inline-flex; gap: 2px; width: fit-content; max-width: 100%; overflow-x: auto; padding: 3px; border: var(--wt-hair); border-radius: 999px; background: rgba(10,132,255,.12); box-shadow: inset 0 1px 2px rgba(6,19,42,.06); }
+  .dshell-tab { border: none; border-bottom: none; margin: 0; padding: 7px 15px; border-radius: 999px; font-size: 12.5px; color: var(--dsw-alias-label-secondary, #4b6285); white-space: nowrap; transition: background .18s var(--wt-ease), color .18s var(--wt-ease), box-shadow .18s var(--wt-ease); }
+  .dshell-tab:hover { color: var(--wt-ink); }
+  .dshell-tabOn { background: #fff; color: var(--wt-blue-d); box-shadow: 0 1px 3px rgba(10,80,190,.24); border-bottom: none; }
+  .dshell-tabOn .ic { color: var(--wt-blue); }
+  /* —— 按钮 —— */
+  .dshell-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 7px 16px; border-radius: 999px; border: 1px solid transparent; background: #0060df; color: #fff; font: inherit; font-size: 12.5px; font-weight: 500; letter-spacing: -.01em; cursor: pointer; box-shadow: 0 8px 20px -10px rgba(10,132,255,.85); transition: filter .18s var(--wt-ease), transform .18s var(--wt-ease), box-shadow .18s var(--wt-ease); }
+  .dshell-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 12px 26px -10px rgba(0,96,223,.85); }
+  .dshell-btn:active { transform: translateY(0) scale(.98); }
+  .dshell-btn .ic { color: #fff; }
+  .dshell-btnGhost { background: rgba(255,255,255,.9); border: var(--wt-hair); color: var(--dsw-alias-label-secondary, #4b6285); box-shadow: none; }
+  .dshell-btnGhost:hover { color: var(--wt-blue-d); border-color: var(--wt-blue); background: #fff; box-shadow: none; }
+  .dshell-btnGhost .ic { color: inherit; }
+  .dshell-btnGhost[data-on="true"] { color: var(--wt-blue-d); border-color: var(--wt-blue); background: rgba(10,132,255,.1); }
+  .dshell-btnDanger { background: transparent; border-color: var(--dsw-alias-state-danger, #ff3b30); color: var(--wt-danger-text, #a01d15); box-shadow: none; }
+  /* —— 输入 —— */
+  .dshell-input, .dshell-textarea { width: 100%; padding: 9px 12px; border: var(--wt-hair); border-radius: var(--wt-rad-sm); background: rgba(255,255,255,.94); color: var(--dsw-alias-label-primary, #0a1b33); font: inherit; font-size: 12.5px; outline: none; transition: border-color .18s var(--wt-ease), box-shadow .18s var(--wt-ease); }
+  .dshell-input::placeholder, .dshell-textarea::placeholder { color: var(--dsw-alias-label-tertiary, #54698a); }
+  .dshell-input:focus, .dshell-textarea:focus { border-color: var(--wt-blue); box-shadow: var(--wt-ring); }
+  /* —— 徽标 / 进度 / 其它 —— */
+  .dshell-badge { border-radius: 999px; }
+  .dshell-badgeDone { color: var(--wt-mint); border-color: rgba(26,158,75,.34); }
+  .dshell-badgeDone::before { background: var(--wt-mint); box-shadow: none; }
+  .dshell-badgeWait { color: #9a5b00; border-color: rgba(255,159,10,.42); }
+  .dshell-badgeWait::before { background: #ff9f0a; box-shadow: none; }
+  .dshell-progress { height: 4px; border-radius: 2px; background: rgba(10,132,255,.16); overflow: hidden; }
+  .dshell-progressBar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #0a84ff, #5ac8fa); transition: width .32s var(--wt-ease); }
+  .dshell-table th, .dshell-table td { border-color: var(--dsw-alias-border-l1, #d3e2fb); }
+  .wt-ledWrap { overflow-x: auto; }
+  .wt-led { width: 100%; border-collapse: collapse; }
+  .wt-led th { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-align: left; white-space: nowrap; color: var(--dsw-alias-label-tertiary, #54698a); }
+  .wt-led td { font-size: 12px; text-align: left; vertical-align: middle; }
+  .wt-led td:nth-child(1), .wt-led td:nth-child(2), .wt-led td:nth-child(5), .wt-led td:nth-child(7) { white-space: nowrap; }
+  .wt-led td:nth-child(3) { min-width: 7em; }
+  .wt-led td:nth-child(6) { min-width: 6em; }
+  .wt-led td:last-child .wt-row { flex-wrap: nowrap; }
+  .wt-led tbody tr:hover td { background: rgba(255,255,255,.72); }
+  .wt-led td a { color: var(--wt-blue-d, #0060df); text-decoration: none; }
+  .wt-led td a:hover { text-decoration: underline; }
+  .wt-led td code { font-size: 11px; color: var(--dsw-alias-label-secondary, #4b6285); word-break: break-all; }
+  .dshell-divider { background: linear-gradient(90deg, var(--dsw-alias-border-l2, #a9c8f5), transparent); }
+  .dshell-muted { font-size: 11.5px; color: var(--dsw-alias-label-tertiary, #8aa2c4); }
+  .dshell-sub { font-size: 12.5px; color: var(--dsw-alias-label-secondary, #4b6285); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(10,80,180,.24); border-radius: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  .dshell-tab:focus:not(:focus-visible), .dshell-btn:focus:not(:focus-visible) { outline: none; }
+  :focus-visible { outline: 2px solid var(--wt-blue); outline-offset: 2px; }
+  /* —— 线性图标：16×16、描边 1、圆角 2.8、内缩 14% —— */
+  .ic { display: inline-block; width: 1em; height: 1em; vertical-align: -.14em; flex: none; color: var(--wt-ink-icon); }
+  /* —— 向导 —— */
+  .wt-steps { position: relative; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: var(--wt-hair); }
+  .wt-step { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; padding: 2px 5px; margin: -2px -5px; border: none; background: none; font: inherit; font-size: 11.5px; color: var(--dsw-alias-label-tertiary, #54698a); cursor: pointer; border-radius: 7px; transition: color .18s var(--wt-ease), background .18s var(--wt-ease); }
+  .wt-step:hover { color: var(--dsw-alias-label-primary, #0a1b33); background: rgba(10,132,255,.08); }
+  .wt-step:focus-visible { outline: 2px solid var(--wt-blue); outline-offset: 2px; }
+  .wt-step[data-on="true"] { color: var(--wt-ink); font-weight: 500; }
+  .wt-step i { font-style: normal; width: 17px; height: 17px; border-radius: 50%; border: var(--wt-hair); display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; background: rgba(255,255,255,.9); transition: background .18s var(--wt-ease), color .18s var(--wt-ease), box-shadow .18s var(--wt-ease); }
+  .wt-step[data-on="true"] i { background: var(--wt-blue-d); border-color: var(--wt-blue-d); color: #fff; box-shadow: 0 0 0 4px rgba(10,132,255,.16); }
+  .wt-step[data-done="true"] i { background: rgba(10,132,255,.14); border-color: var(--wt-blue); color: var(--wt-blue-d); }
+  .wt-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .wt-field > label { font-size: 11.5px; font-weight: 500; color: var(--dsw-alias-label-secondary, #4b6285); display: flex; gap: 5px; align-items: center; }
+  .wt-field .req { color: var(--wt-danger-text, #a01d15); }
+  .wt-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wt-err { font-size: 11.5px; color: var(--wt-danger-text, #a01d15); min-height: 16px; }
+  .wt-nav { display: flex; gap: 8px; align-items: center; margin-top: 4px; padding-top: 14px; border-top: var(--wt-hair); }
+  .wt-nav .sp { flex: 1; }
+  .wt-out { display: flex; flex-direction: column; gap: 10px; }
+  .wt-out code { font-size: 11px; color: var(--dsw-alias-label-secondary, #4b6285); word-break: break-all; }
+  .wt-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .wt-aiMask { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 20px; background: rgba(10,27,51,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .wt-aiCard { width: min(560px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: var(--wt-rad-lg); border: var(--wt-hair); background: #fff; box-shadow: var(--wt-shadow-2); }
+  .wt-aiCard h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.02em; }
+  .wt-aiCard .dshell-muted { margin-top: -6px; }
+  .wt-aiRow { display: flex; gap: 8px; justify-content: flex-end; }
+  .wt-aiHint { font-size: 11.5px; color: var(--dsw-alias-label-secondary, #4b6285); }
+  /* 我的应用 */
+  .wt-apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .wt-app { display: flex; flex-direction: column; gap: 5px; padding: 13px 14px; border: var(--wt-hair); border-radius: var(--wt-rad); background: rgba(255,255,255,.86); text-align: left; font: inherit; cursor: pointer; transition: border-color .18s var(--wt-ease), transform .18s var(--wt-ease), box-shadow .18s var(--wt-ease); }
+  .wt-app:hover { border-color: var(--wt-blue); transform: translateY(-1px); box-shadow: var(--wt-shadow-1); }
+  .wt-app b { font-size: 12.5px; font-weight: 600; letter-spacing: -.01em; }
+  .wt-app span { font-size: 11px; color: var(--dsw-alias-label-secondary, #4b6285); }
+  .wt-app[data-busy="true"] { opacity: .82; }
+  .wt-app[data-busy="true"]:hover { border-color: var(--dsw-alias-border-l2, #a9c8f5); }
+  .wt-appIco { font-size: 17px; }
+  .wt-appMiss { font-size: 10.5px; color: #9a5b00; }
+  /* 全屏打开应用 */
+  .wt-menu { position: absolute; right: 24px; top: 74px; z-index: 40; display: flex; flex-direction: column; gap: 2px; padding: 6px; border: var(--wt-hair); border-radius: 14px; background: rgba(255,255,255,.96); -webkit-backdrop-filter: var(--wt-glass); backdrop-filter: var(--wt-glass); box-shadow: var(--wt-shadow-2); }
+  .wt-menuItem { border: none; background: none; font: inherit; font-size: 12px; text-align: left; padding: 7px 10px; border-radius: 9px; cursor: pointer; color: var(--dsw-alias-label-primary, #0a1b33); }
+  .wt-menuItem:hover { background: rgba(10,132,255,.09); color: var(--wt-blue-d, #0060df); }
+  .wt-menuVer { font-size: 10px; color: var(--dsw-alias-label-tertiary, #54698a); padding: 4px 10px; font-variant-numeric: tabular-nums; }
+  .dshell-listItem .dshell-listItemMeta { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .wt-recSearch { flex: 1; min-width: 140px; max-width: 260px; }
+  .wt-chips { display: inline-flex; gap: 2px; padding: 3px; border: var(--wt-hair); border-radius: 999px; background: rgba(10,132,255,.1); }
+  .wt-chips .dshell-btn { border: none; background: none; box-shadow: none; padding: 4px 11px; font-size: 11.5px; color: var(--dsw-alias-label-secondary, #4b6285); font-variant-numeric: tabular-nums; }
+  .wt-chips .dshell-btn[data-on="true"] { background: #fff; color: var(--wt-blue-d, #0060df); box-shadow: 0 1px 3px rgba(10,80,190,.2); }
+  .dshell-listItem { flex-wrap: wrap; }
+  /* toast */
+  .wt-boot { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--wt-rad); border: var(--wt-hair); background: rgba(255,255,255,.88); color: var(--dsw-alias-label-primary, #0a1b33); font-size: 12.5px; box-shadow: var(--wt-shadow-1); }
+  .wt-boot-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--wt-blue); box-shadow: 0 0 0 4px rgba(10,132,255,.18); flex: none; }
+  .wt-boot > div { flex: 1; }
+  .wt-foot { display: flex; flex-direction: column; gap: 4px; text-align: center; font-size: 11.5px; color: var(--dsw-alias-label-tertiary, #8aa2c4); }
+  .wt-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 90; max-width: 82%; padding: 9px 16px; border-radius: 999px; border: var(--wt-hair); background: rgba(255,255,255,.96); -webkit-backdrop-filter: var(--wt-glass); backdrop-filter: var(--wt-glass); color: var(--dsw-alias-label-primary, #0a1b33); font-size: 12px; box-shadow: var(--wt-shadow-2); }
+  .wt-toast[data-bad="true"] { border-color: rgba(255,59,48,.45); color: #a01d15; }
+  @media (max-width: 720px) {
+    .dshell { padding: 18px 14px 32px; gap: 20px; }
+    .wt-hero { padding: 20px 18px; }
+    .wt-display { font-size: 26px; }
+    .wt-heroActions { margin-left: 0; width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    .dshell-btn:hover { transform: none; }
+  }
+  /* 页内放映层 */
+  .wt-reel{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:#eaf1ff}
+  .wt-reelbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #d3e2fb;background:rgba(255,255,255,.92)}
+  .wt-reelbar b{font-size:12.5px;font-weight:600}
+  .wt-reelbar .sp{flex:1}
+  .wt-reelbar .path{font-size:10.5px;color:#5b6b83;word-break:break-all}
+  .wt-reel iframe{flex:1;width:100%;border:0;background:#fff}
+  .wt-link{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+  .wt-link:hover{color:#0060df;text-decoration:underline}
+  @media (prefers-reduced-motion: reduce){.wt-reelbar{transition:none}}
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <defs id="wt-defs"></defs>
+</svg>
+<div class="dshell" id="app">
+  <!-- 静态兜底：JS 没跑起来也应该看到这条浅色横幅。右上角版本戳用来判断 iframe 里到底是哪一份。 -->
+  <div class="wt-boot">
+    <div class="wt-boot-dot"></div>
+    <div>
+      <b>应用工作台</b>
+      <div>正在加载…</div>
+    </div>
+    <button type="button" class="dshell-btn dshell-btnGhost" onclick="location.reload()">重新载入</button>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ============================ 常量与工具 ============================ */
+var ROOT = "WSROOT";
+var OUT_DIR = "向导产出";
+var DRAFT_DIR = "向导草稿";
+var AI_REQ = DRAFT_DIR + "/AI请求.json";
+var AI_BACK = DRAFT_DIR + "/AI回填.json";
+var APPS = "应用目录.json";
+var APP_DIR = "应用";
+var BUILD = "10-13 14:01";
+var LS_WIZ = "dsh.worktable.wizards.v1";
+var LEDGER_JSON = "应用台账.json";           /* 机读台账，落在项目根目录 */
+var LEDGER_MD = "应用台账.md";               /* 人读台账，每次写 json 后整表重排 */
+var LEDGER_COLS = ["时间", "向导", "名称", "产出文件", "状态", "备注"];
+var LEDGER_EMPTY = "还没有记录。走完一次向导，产物会自动记在这里。";
+var PROD_DIRS = [OUT_DIR, "原型产出"];       /* 判「多余产物窗」用的产物目录白名单 */
+var $ = function (sel, el) { return (el || document).querySelector(sel); };
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function icon(name, cls) { return '<svg class="ic ' + (cls || "") + '" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="#wt-' + name + '"/></svg>'; }
+function toast(msg, bad) {
+  var el = $("#toast");
+  el.innerHTML = '<div class="wt-toast" data-bad="' + (bad ? "true" : "false") + '">' + esc(msg) + "</div>";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { el.innerHTML = ""; }, 3600);
+}
+async function api(path, body) {
+  var r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) });
+  var j = null;
+  try { j = await r.json(); } catch (e) { j = null; }
+  if (!r.ok || (j && j.error)) throw new Error((j && j.error) || ("HTTP " + r.status));
+  return j || {};
+}
+function siteUrl(rel) { return "/api/worktable/site/" + encodeURIComponent(ROOT) + "/" + rel.split("/").map(encodeURIComponent).join("/"); }
+function absOf(rel) { return ROOT + "/" + rel; }
+function cleanName(s) {
+  return String(s || "").trim().replace(/[\/\\:*?"<>|\s]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "未命名";
+}
+function stamp() {
+  var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; };
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes());
+}
+function lines(v) { return String(v || "").split("\n").map(function (x) { return x.trim(); }).filter(Boolean); }
+function load(key, def) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch (e) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+      return true;
+    } catch (e2) { return false; }
+  }
+}
+
+/* ============================ 线性图标（苹果风规格） ============================ */
+var SHAPES = {
+  browser: [{ c: [8, 8, 6.2] }, { p: "M1.9 8h12.2" }, { p: "M8 1.8c2.1 3.1 2.1 9.3 0 12.4" }, { p: "M8 1.8c-2.1 3.1-2.1 9.3 0 12.4" }],
+  anim: [{ r: [1.8, 3.2, 12.4, 9.6] }, { p: "M5.5 3.2v9.6" }, { p: "M10.5 3.2v9.6" }],
+  explorer: [{ p: "M2.2 4.8c0-.7.6-1.3 1.3-1.3h3.1l1.7 2.1h4.2c.7 0 1.3.6 1.3 1.3v5.9c0 .7-.6 1.3-1.3 1.3H3.5c-.7 0-1.3-.6-1.3-1.3V4.8Z" }],
+  scm: [{ c: [3.7, 3.9, 1.6] }, { c: [3.7, 12.1, 1.6] }, { c: [12.3, 3.9, 1.6] }, { p: "M3.7 5.5v5" }, { p: "M12.3 5.5v1.1c0 2.4-4.6 3-8.6 3.6" }],
+  tasks: [{ r: [2.3, 2.3, 11.4, 11.4] }, { p: "M5.3 8.3l2.1 2.1 3.5-4.3" }],
+  terminal: [{ r: [1.8, 3, 12.4, 10] }, { p: "M4.6 6.7l2 1.9-2 1.9" }, { p: "M8.9 10.5h2.9" }],
+  custom: [{ p: "M8 2.6l1.5 3.7 3.7 1.5-3.7 1.5L8 13l-1.5-3.7L2.8 7.8l3.7-1.5L8 2.6Z" }, { p: "M12.7 2.7l.55 1.4 1.4.55-1.4.55-.55 1.4-.55-1.4-1.4-.55 1.4-.55.55-1.4Z" }],
+  console: [{ r: [1.8, 3.2, 12.4, 8] }, { p: "M8 11.2v2.4" }, { p: "M6 13.6h4" }],
+  box: [{ p: "M8 2.3l5.4 2.8v5.8L8 13.7l-5.4-2.8V5.1L8 2.3Z" }, { p: "M2.6 5.1L8 7.9l5.4-2.8" }, { p: "M8 7.9v5.8" }, { p: "M5.3 3.7l5.4 2.8" }],
+  layout: [{ r: [2, 2, 12, 12] }, { p: "M2 6.2h12" }, { p: "M6.6 6.2V14" }],
+  link: [{ p: "M6.9 9.1a3 3 0 0 1 0-4.3l1.4-1.4a3 3 0 0 1 4.3 4.3l-.9.9" }, { p: "M9.1 6.9a3 3 0 0 1 0 4.3l-1.4 1.4a3 3 0 0 1-4.3-4.3l.9-.9" }],
+  file: [{ p: "M4 2.2h5.2L12.6 5.6V13a1.2 1.2 0 0 1-1.2 1.2H4A1.2 1.2 0 0 1 2.8 13V3.4A1.2 1.2 0 0 1 4 2.2Z" }, { p: "M9 2.4v3.4h3.4" }],
+  gear: [{ c: [8, 8, 2.3] }, { p: "M8 1.6v1.8M8 12.6v1.8M1.6 8h1.8M12.6 8h1.8M3.5 3.5l1.3 1.3M11.2 11.2l1.3 1.3M12.5 3.5l-1.3 1.3M4.8 11.2l-1.3 1.3" }],
+  app: [{ r: [2.4, 2.4, 11.2, 11.2] }, { c: [8, 8, 2.4] }],
+  plus: [{ p: "M8 3.4v9.2M3.4 8h9.2" }],
+  refresh: [{ p: "M13 8a5 5 0 1 1-1.6-3.7" }, { p: "M13.2 2.6v2.2H11" }],
+  doc: [{ r: [3, 2, 10, 12] }, { p: "M5.4 5.6h5.2M5.4 8h5.2M5.4 10.4h3.4" }]
+};
+function buildDefs() {
+  var sw = 1, rx = 2.8, sc = 0.86, t = (16 - 16 * sc) / 2; /* 科技苹果风规格 */
+  $("#wt-defs").innerHTML = Object.keys(SHAPES).map(function (k) {
+    var body = SHAPES[k].map(function (s) {
+      if (s.r) return '<rect x="' + s.r[0] + '" y="' + s.r[1] + '" width="' + s.r[2] + '" height="' + s.r[3] + '" rx="' + rx + '"/>';
+      if (s.c) return '<circle cx="' + s.c[0] + '" cy="' + s.c[1] + '" r="' + s.c[2] + '"/>';
+      return '<path d="' + s.p + '"/>';
+    }).join("");
+    return '<symbol id="wt-' + k + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="' + sw +
+      '" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(' + t + " " + t + ") scale(" + sc + ')">' + body + "</g></symbol>";
+  }).join("");
+}
+
+/* ============================ 状态 ============================ */
+var state = {
+  tab: "code",
+  menu: false,
+  filter: "全部",
+  q: "",
+  step: load(LS_WIZ + ".step", {}),
+  form: load(LS_WIZ + ".form", {}),
+  files: [],
+  filesErr: "",
+  lastOut: load(LS_WIZ + ".last", null),
+  aiOpen: false,
+  aiBusy: false,
+  aiErr: "",
+  ask: "",
+  pendingAt: "",
+  pollTimer: null,
+  apps: null,
+  appsErr: "",
+  ledger: null,
+  ledgerErr: "",
+  panes: null
+};
+function f(w, k) { return (state.form[w] && state.form[w][k]) || ""; }
+function setF(w, k, v) {
+  state.form[w] = state.form[w] || {};
+  state.form[w][k] = v;
+  save(LS_WIZ + ".form", state.form);
+}
+function stepOf(w) { return state.step[w] || 0; }
+function setStep(w, n) { state.step[w] = n; save(LS_WIZ + ".step", state.step); }
+
+/* ============================ 向导定义 ============================ */
+var WIZARDS = [
+  {
+    id: "code", name: "编程向导", icon: "tasks",
+    desc: "名称 → 方案 → PRD → 设计 → 测试 → 发布，产出项目方案书与开发任务",
+    steps: [
+      { title: "项目定位", fields: [
+        { k: "pname", label: "名称", type: "input", req: true, ph: "例：巡检助手" },
+        { k: "one", label: "定位", type: "input", req: true },
+        { k: "users", label: "用户", type: "input", req: true, ph: "谁用、几个人、什么场景" },
+        { k: "value", label: "价值", type: "textarea", req: true, ph: "省什么 / 赚什么 / 替代掉什么，尽量可量化" },
+        { k: "story", label: "故事", type: "textarea", req: true, ph: "作为…我希望…以便…" },
+        { k: "atype", label: "类型", type: "radio", opts: ["Web", "桌面", "移动", "小程序", "CLI", "后端", "其他"] },
+        { k: "mvp", label: "是否 MVP", type: "radio", opts: ["是", "否"] },
+        { k: "mvpNote", label: "MVP 边界", type: "input", ph: "先不做什么" }
+      ] },
+      { title: "总体方案", fields: [
+        { k: "form", label: "运行形态", type: "radio", opts: ["单文件 HTML", "工作台窗口", "独立插件", "CLI"] },
+        { k: "stack", label: "技术栈", type: "input", ph: "原生 JS / Node" }
+      ] },
+      { title: "PRD 要点", fields: [
+        { k: "scenes", label: "核心场景（每行一个）", type: "textarea", req: true },
+        { k: "features", label: "功能清单（每行一个）", type: "textarea", req: true },
+        { k: "nongoals", label: "非目标（明确不做）", type: "textarea" }
+      ] },
+      { title: "开发设计", fields: [
+        { k: "modules", label: "模块拆分（每行一个）", type: "textarea" },
+        { k: "data", label: "数据结构 / 文件", type: "textarea" },
+        { k: "apis", label: "接口", type: "textarea" },
+        { k: "flows", label: "关键流程", type: "textarea" }
+      ] },
+      { title: "开发测试", fields: [
+        { k: "cases", label: "测试用例（每行一个）", type: "textarea", req: true },
+        { k: "check", label: "自检清单（每行一个）", type: "textarea" }
+      ] },
+      { title: "发布", fields: [
+        { k: "target", label: "发布到哪", type: "radio", opts: ["创意工作室", "可独立运行的应用程序"] },
+        { k: "dir", label: "目标目录", type: "input", ph: "dist/" },
+        { k: "launch", label: "启动方式", type: "input", ph: "open -a / npm start" },
+        { k: "deps", label: "依赖", type: "input" }
+      ] }
+    ],
+    build: function (v) {
+      var sec = function (t, arr) { return ["", "## " + t].concat((arr && arr.length ? arr : ["（待补）"]).map(function (x) { return "- " + x; })) };
+      var md = ["# " + (v.pname || "未命名项目") + " · 项目方案书", "",
+        "## 0. 定位",
+        "- 一句话定位：" + (v.one || "（待补）"),
+        "- 目标用户：" + (v.users || "（待补）"),
+        "- 价值：" + String(v.value || "（待补）").replace(/\s*\n+\s*/g, " "),
+        "- 应用类型：" + (v.atype || "（未选）"),
+        "- 是否 MVP：" + (v.mvp || "（未选）"),
+        "- MVP 边界：" + (v.mvpNote || "（未填）"),
+        ""].concat(
+        ["### 用户故事"], (lines(v.story).length ? lines(v.story) : ["（待补）"]).map(function (x) { return "- " + x; }), [
+        "", "- 运行形态：" + (v.form || "-"), "- 技术栈：" + (v.stack || "-"), "", "## 1. PRD"]).concat(
+        sec("核心场景", lines(v.scenes)), sec("功能清单", lines(v.features)), sec("非目标", lines(v.nongoals)),
+        sec("模块拆分", lines(v.modules)), sec("数据结构 / 文件", lines(v.data)), sec("接口", lines(v.apis)), sec("关键流程", lines(v.flows)),
+        sec("测试用例", lines(v.cases)), sec("自检清单", lines(v.check)),
+        ["", "## 2. 发布", "- 发布目标：" + (v.target || "-"), "- 目标目录：" + (v.dir || "-"), "- 启动方式：" + (v.launch || "-"), "- 依赖：" + (v.deps || "-"), "",
+        "## 3. 开发任务提示词（给 AI）", "见本文件顶部字段，按「先跑通最小闭环 → 再补测试 → 最后发布」三段推进；每段结束给出可验证结果。"]);
+      var mvpLine = v.mvp === "是" ? "本轮按 MVP 交付：只做「MVP 边界」内的部分，边界外的一律记进待办不要实现。\n" : "";
+      return { name: "编程", body: md.join("\n"), prompt: "请按这份方案书开发「" + (v.pname || "项目") + "」（" + (v.atype || "应用类型待定") + "），代码放进项目文件夹 " + ROOT + "，先交付能跑的最小闭环，再补测试用例，最后按发布章节交付；每步说明如何验证。\n" + mvpLine + "\n" + md.join("\n") };
+    }
+  }
+];
+/* 示例：首次打开就把每个字段填成一份可改的真实草稿 */
+var EXAMPLE = {
+  pname: "拾零集", one: "把读书笔记、随想和草稿收进一个能写作的工作台",
+  users: "我自己，外加两三个读书会朋友看成稿", value: "素材不再散在备忘录、微信和纸本里；从想法到成稿少走弯路，一周能多写完一篇",
+  story: "作为写作者，我希望随手记下片段并自动归档，以便日后找得回来\n作为写作者，我希望看到片段之间的关联，以便拼成一篇\n作为读书会组织者，我希望把成稿导出成干净文本，以便分享",
+  atype: "Web", mvp: "是", mvpNote: "不做多人协作和云端同步",
+  form: "单文件 HTML", stack: "原生 JS + dshell 皮肤，数据存 Markdown 文件",
+  scenes: "随手摘录与批注\n按主题翻素材\n草稿改到成稿\n导出给读书会", features: "片段卡片 / 标签与全文检索 / 关联视图 / 草稿编辑 / 导出纯文本",
+  nongoals: "不做云端同步、不做协作编辑、不做 OCR",
+  modules: "片段库 / 标签索引 / 关联视图 / 草稿本 / 导出器", data: "notes/*.md（一则一文件，头部存标签与时间）", apis: "工作台 /api/worktable/fs 列目录、write 落盘",
+  flows: "记一条 → 打标签 → 挂到主题 → 起草 → 导出",
+  cases: "中文检索要能命中片段正文\n没标签的要落进「待整理」\n导出不丢分段", check: "打开即用不需构建 / 数据是纯文本可读可改 / 断网能用",
+  target: "创意工作室", dir: "拾零集/", launch: "open -a Safari index.html", deps: "无外部依赖"
+};
+var SEED_OLD = { pname: "巡检助手", one: "把纸质巡检记录变成结构化台账" };
+function seedExample() {
+  var cur = state.form.code || {};
+  if (!Object.keys(cur).some(function (k) { return String(cur[k] || "").trim(); })) {
+    state.form.code = Object.assign({}, EXAMPLE); save(LS_WIZ + ".form", state.form); return true;
+  }
+  /* 上一版示例没被改过 → 换成新示例；改过就绝不动 */
+  if (String(cur.pname || "").trim() === SEED_OLD.pname && String(cur.one || "").trim() === SEED_OLD.one) {
+    state.form.code = Object.assign({}, EXAMPLE);
+    save(LS_WIZ + ".form", state.form);
+    return true;
+  }
+  return false;
+}
+function wizById(id) { return WIZARDS.filter(function (w) { return w.id === id; })[0]; }
+
+/* ============================ 台账：产物记录 ============================
+   台账两份：应用台账.json（数组，机读）+ 应用台账.md（每次写 json 后整表重排，人读）。
+   读不到、不是数组、空数组都算空台账 —— 只显示一行空态文案，绝不编造记录。
+   删记录只回写 json + md，产出文件留在原地，本页不删任何文件。 */
+function localNow() { return new Date().toLocaleString(); }
+function wizLabel(w) { return String((w && w.name) || "").replace(/向导$/, "") || (w && w.id) || "未分类"; }
+function productName(v) {
+  v = v || {};
+  return cleanName(v.title || v.pname || v.purpose || v.home || v.name || "产物").slice(0, 16);
+}
+function ledgerId() { return "L" + stamp() + "-" + Math.random().toString(36).slice(2, 7); }
+function normalizeRows(list) {
+  var out = [];
+  (Array.isArray(list) ? list : []).forEach(function (x, i) {
+    var r = (x && typeof x === "object" && !Array.isArray(x)) ? x : null;
+    if (!r) return;                                    /* 脏条目直接丢掉，不编成记录 */
+    var files = Array.isArray(r.files)
+      ? r.files.filter(function (p) { return typeof p === "string" && p && safeRel(p); })
+      : [];
+    if (!r.id && !r.name && !r.at && !files.length) return;   /* 全空的条目也不占行 */
+    out.push({
+      id: String(r.id || ("L-local-" + i)),
+      at: String(r.at || ""),
+      wiz: String(r.wiz || ""),
+      name: String(r.name || "未命名"),
+      files: files,
+      session: (r.session == null || r.session === "") ? null : String(r.session),
+      status: String(r.status || "草稿"),
+      note: String(r.note || "")
+    });
+  });
+  return out;
+}
+async function ledgerRead() {
+  var url = "/api/worktable/file?path=" + encodeURIComponent(absOf(LEDGER_JSON)) + "&sessionId=";
+  var r = await fetch(url, { cache: "no-store" });
+  if (r.status === 404 || r.status === 400) return [];        /* 还没有台账，不算故障 */
+  if (!r.ok) throw new Error("HTTP " + r.status);             /* 其它读失败要看得见 */
+  var text = await r.text();
+  if (!text || !text.trim()) return [];
+  return normalizeRows(JSON.parse(text));
+}
+function mdCell(s) {
+  return String(s == null ? "" : s).split("|").join("/").replace(/[\r\n]+/g, " ").trim();
+}
+function ledgerMarkdown(rows) {
+  var head = ["# 应用台账", "",
+    "- 记录数：" + rows.length,
+    "- 重写时间：" + localNow(),
+    "- 机读文件：" + absOf(LEDGER_JSON), "",
+    "| " + LEDGER_COLS.join(" | ") + " |",
+    "|" + LEDGER_COLS.map(function () { return " --- "; }).join("|") + "|"];
+  var body = rows.map(function (r) {
+    return "| " + [mdCell(r.at) || "—", mdCell(r.wiz) || "—", mdCell(r.name) || "—",
+      mdCell((r.files || []).join(" ; ")) || "—", mdCell(r.status) || "—", mdCell(r.note) || "—"].join(" | ") + " |";
+  });
+  return head.concat(body).join("\n") + "\n";
+}
+async function ledgerWrite(rows) {
+  await writeFile(LEDGER_JSON, JSON.stringify(rows, null, 2));
+  await writeFile(LEDGER_MD, ledgerMarkdown(rows));
+}
+async function ledgerAppend(rec) {
+  rec = rec || {};
+  var rows = await ledgerRead();
+  var entry = {
+    id: rec.id || ledgerId(),
+    at: rec.at || localNow(),
+    wiz: String(rec.wiz || ""),
+    name: rec.name || "未命名",
+    files: (rec.files || []).filter(safeRel),
+    session: (rec.session == null || rec.session === "") ? null : String(rec.session),
+    status: rec.status || "草稿",
+    note: rec.note || ""
+  };
+  rows.push(entry);
+  await ledgerWrite(rows);
+  state.ledger = rows; state.ledgerErr = "";
+  return entry;
+}
+async function refreshLedger() {
+  try { state.ledger = await ledgerRead(); state.ledgerErr = ""; }
+  catch (e) { state.ledger = []; state.ledgerErr = "读不到 " + LEDGER_JSON + "：" + (e && e.message || e); }
+  render();
+}
+async function ledgerSetStatus(id, status) {
+  var rows;
+  try { rows = await ledgerRead(); } catch (e) { toast("读台账失败：" + (e && e.message || e), true); return false; }
+  var hit = null;
+  rows = rows.map(function (r) {
+    if (r.id !== id) return r;
+    hit = r; return Object.assign({}, r, { status: status });
+  });
+  if (!hit) { toast("台账里找不到这条记录", true); return false; }
+  try { await ledgerWrite(rows); state.ledger = rows; state.ledgerErr = ""; render(); toast("已" + status + "：" + hit.name); }
+  catch (e) { toast("回写失败：" + (e && e.message || e), true); return false; }
+  return true;
+}
+async function ledgerDelete(id) {
+  var rows;
+  try { rows = await ledgerRead(); } catch (e) { toast("读台账失败：" + (e && e.message || e), true); return false; }
+  var hit = null;
+  var nextRows = rows.filter(function (r) { if (r.id === id) { hit = r; return false; } return true; });
+  if (!hit) { toast("台账里找不到这条记录", true); return false; }
+  try {
+    await ledgerWrite(nextRows);
+    state.ledger = nextRows; state.ledgerErr = ""; render();
+    toast("已删记录，文件保留：" + ((hit.files || []).join("、") || "无产出"));
+  } catch (e) { toast("删记录失败：" + (e && e.message || e), true); return false; }
+  return true;
+}
+
+/* ============================ 保持一个窗口（只读守卫） ============================
+   本页永不新建工作台窗格、永不开标签页（没有 openTab / addPane，也不依赖 __dshCustomEnv）。
+   只读三件事：数窗格、认出「本页所在的窗」、认出 iframe 指向本项目产物目录的多余产物窗。
+   「收窗」只 filter 掉那些产物窗，用户自己建的窗一律不动，且永远至少留一个窗格。
+   在外部浏览器单独打开 → 取不到布局：不报错、不显示按钮。 */
+function hosts() {
+  var out = [], w = null;
+  try { w = window; } catch (e) { return out; }
+  for (var i = 0; i < 6 && w; i++) {
+    if (out.indexOf(w) >= 0) break;
+    out.push(w);
+    try { if (w === w.parent) break; w = w.parent; } catch (e) { break; }
+  }
+  try { if (window.top && out.indexOf(window.top) < 0) out.push(window.top); } catch (e) {}
+  return out;
+}
+function hostGet(key) {
+  var hs = hosts();
+  for (var i = 0; i < hs.length; i++) { try { if (hs[i][key]) return hs[i][key]; } catch (e) {} }
+  return null;
+}
+function wtStore() { var g = hostGet("__dshWorktable"); return g && g.splitStore && g.splitStore.spec ? g.splitStore : null; }
+function curSession() {
+  try {
+    var s = hostGet("__dshSessions");
+    var snap = (s && s.list && typeof s.list.getSnapshot === "function") ? s.list.getSnapshot() : null;
+    return (snap && snap.current) ? String(snap.current) : null;
+  } catch (e) { return null; }
+}
+function paneList(spec) {
+  var out = [];
+  if (!spec) return out;
+  if (spec.left) out.push({ row: "left", index: 0, pane: spec.left });
+  (spec.top || []).forEach(function (p, i) { out.push({ row: "top", index: i, pane: p }); });
+  (spec.main || []).forEach(function (p, i) { out.push({ row: "main", index: i, pane: p }); });
+  out.forEach(function (t, i) { t.label = "窗口" + (i + 1); });
+  return out;
+}
+function normUrl(u) {
+  var s = String(u || "");
+  try { s = s.replace(String(location.origin || ""), ""); } catch (e) {}
+  s = s.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, "");
+  try { s = decodeURIComponent(s); } catch (e) {}
+  return s.replace(/[#?].*$/, "").replace(/^\/+|\/+$/g, "");
+}
+function paneIframeUrls(p) {
+  return ((p && p.tabs) || []).map(function (t) {
+    var c = t && t.content;
+    return (c && c.kind === "iframe") ? normUrl(c.url) : "";
+  }).filter(Boolean);
+}
+function paneProductRel(p) {
+  var root = String(ROOT).replace(/^\/+/, "").replace(/\/+$/, "");
+  var us = paneIframeUrls(p);
+  for (var i = 0; i < us.length; i++) {
+    var u = us[i], k = u.indexOf(root + "/");
+    if (k < 0 || u.indexOf("api/worktable/site/") < 0) continue;
+    var rel = u.slice(k + root.length + 1);
+    for (var d = 0; d < PROD_DIRS.length; d++) {
+      if (rel === PROD_DIRS[d] || rel.indexOf(PROD_DIRS[d] + "/") === 0) return rel;
+    }
+  }
+  return "";
+}
+function isSelfPane(p) {
+  var here = normUrl(location.href);
+  if (!here) return false;
+  return paneIframeUrls(p).indexOf(here) >= 0;
+}
+function extraProductIds(spec) {
+  var ids = [];
+  if (!spec) return ids;
+  paneList(spec).forEach(function (x) {
+    if (!isSelfPane(x.pane) && paneProductRel(x.pane)) ids.push(x.pane.id);
+  });
+  return ids;
+}
+function scanPanes() {
+  var info = { found: false, total: 0, extra: 0, ids: [] };
+  try {
+    var st = wtStore();
+    if (!st || !st.spec) { state.panes = info; return info; }
+    var list = paneList(st.spec);
+    info.found = true;
+    info.total = list.length;
+    info.ids = extraProductIds(st.spec);
+    info.extra = info.ids.length;
+  } catch (e) { info.err = String(e && e.message || e); }
+  state.panes = info;
+  return info;
+}
+function commitSpec(st, nextSpec) {
+  try { st.spec = nextSpec; } catch (e) {}
+  try { st.onSpecMutated && st.onSpecMutated(nextSpec); } catch (e) {}
+  try { st.persist && st.persist(); } catch (e) {}
+  try { st.notify && st.notify(); } catch (e) {}
+}
+function collapsePanes() {
+  var st = null;
+  try { st = wtStore(); } catch (e) { st = null; }
+  if (!st || !st.spec) { toast("取不到工作台布局，未改动任何窗口", true); return { ok: false, msg: "布局不可用" }; }
+  var spec = st.spec, list = paneList(spec);
+  if (list.length <= 1) { scanPanes(); render(); toast("只有一个窗口，无需收窗"); return { ok: false, msg: "只有一个窗" }; }
+  var drop = {};
+  extraProductIds(spec).forEach(function (id) { drop[id] = 1; });
+  if (!Object.keys(drop).length) { scanPanes(); render(); toast("没有多余的产物窗，布局保持原样"); return { ok: false, msg: "无多余产物窗" }; }
+  var kept = list.filter(function (x) { return !drop[x.pane.id]; });
+  if (!kept.length) kept = [list[0]];                 /* 永远至少留一个窗格 */
+  var leftOne = kept.filter(function (x) { return x.row === "left"; })[0];
+  var topArr = kept.filter(function (x) { return x.row === "top"; }).map(function (x) { return x.pane; });
+  var mainArr = kept.filter(function (x) { return x.row === "main"; }).map(function (x) { return x.pane; });
+  if (!leftOne && !topArr.length && !mainArr.length) { toast("至少得留一个窗，不收了", true); return { ok: false, msg: "留窗保护" }; }
+  commitSpec(st, Object.assign({}, spec, {
+    left: leftOne ? leftOne.pane : null,
+    top: topArr.length ? topArr : null,
+    main: mainArr.length ? mainArr : null
+  }));
+  var n = list.length - kept.length;
+  scanPanes(); render();
+  toast("已收回 " + n + " 个产物窗，保留 " + kept.length + " 个窗口");
+  return { ok: true, removed: n, kept: kept.length };
+}
+
+/* ============================ 产出文件 ============================ */
+async function ensureDir() {
+  try { await api("/api/worktable/mkdir", { path: absOf(OUT_DIR) }); return true; }
+  catch (e) { if (String(e.message).indexOf("exists") >= 0 || String(e.message).indexOf("EEXIST") >= 0) return true; state.filesErr = "建目录失败：" + e.message; return false; }
+}
+function safeRel(rel) {
+  var s = String(rel == null ? "" : rel);
+  if (!s || s.indexOf("..") >= 0) return false;
+  if (s.charAt(0) === "/" || s.indexOf("\\") >= 0) return false;
+  return !/^[a-zA-Z]:/.test(s);               /* 只收项目目录内的相对路径 */
+}
+async function writeFile(rel, content) {
+  if (!safeRel(rel)) throw new Error("路径越界，只允许写项目目录内的相对路径：" + rel);
+  return api("/api/worktable/write", { path: absOf(rel), content: content });
+}
+async function refreshFiles() {
+  state.filesErr = "";
+  try {
+    var r = await api("/api/worktable/fs", { path: absOf(OUT_DIR) });
+    state.files = (r.entries || []).filter(function (e) { return !e.isDir; });
+  } catch (e) { state.files = []; state.filesErr = "读不到 " + OUT_DIR + "/：" + e.message; }
+  render();
+}
+async function generate(w) {
+  var v = state.form[w.id] || {};
+  var out = w.build(v);
+  var rel, content;
+  if (out.raw != null) { rel = cleanName(out.name) + "." + (out.ext || "md"); content = out.raw; }
+  else { rel = OUT_DIR + "/" + out.name + "-" + stamp() + "-" + cleanName(v.title || v.pname || v.purpose || v.home || "产物").slice(0, 16) + ".md"; content = out.body; }
+  if (!(await ensureDir())) { toast(state.filesErr, true); return; }
+  try {
+    await writeFile(rel, content);
+    state.lastOut = { rel: rel, prompt: out.prompt || "", at: new Date().toLocaleString(), wiz: w.name };
+    save(LS_WIZ + ".last", state.lastOut);
+    var rec = null, recErr = "";
+    try { rec = await ledgerAppend({ wiz: wizLabel(w), name: productName(v), files: [rel], session: curSession(), status: "草稿", note: "" }); }
+    catch (e2) { recErr = String(e2 && e2.message || e2); }
+    toast(recErr ? "已生成，但没记入台账：" + recErr : "已生成：" + rel + " · 已记入台账");
+    await refreshFiles();
+  } catch (e) { toast("写入失败：" + e.message, true); }
+}
+
+/* ============================ AI 生成 ============================
+   页面没有模型能力（工作台只给 fs/write/mkdir/git/site/file/term），所以：
+   ① 本地先把能推断的填上（即时可见、可改）；② 把要求写成 向导草稿/AI请求.json；
+   ③ 直接把一句话塞进 DSH 会话输入框（页面与工作台同源，用插件同款原生 setter + input 事件）；
+   ④ 轮询 向导草稿/AI回填.json，读到就回填表单，用户继续改。 */
+function labelsOf() {
+  var m = {};
+  WIZARDS[0].steps.forEach(function (st) { st.fields.forEach(function (fd) { m[fd.k] = fd.label; }); });
+  return m;
+}
+function hostFillInput(text2) {
+  var docs = [];
+  try {
+    if (window.parent && window.parent !== window && window.parent.document) docs.push(window.parent.document);
+  } catch (e) {
+  }
+  docs.push(document);
+  for (var i = 0; i < docs.length; i++) {
+    var ta = null;
+    try { ta = docs[i].querySelector("textarea[data-phase]"); } catch (e) { continue; }
+    if (!ta || ta.disabled || ta.readOnly) continue;
+    var setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+    setter = setter && setter.set;
+    var next = ta.value && ta.value.trim() ? ta.value + "\n\n" + text2 : text2;
+    if (setter) setter.call(ta, next); else ta.value = next;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    try { ta.focus(); } catch (e) {
+    }
+    return true;
+  }
+  return false;
+}
+/* 一句话推断：类型 / MVP / 用户 / 价值 / 故事骨架，先填上再让 AI 补细 */
+function guessFrom(text2) {
+  var t = String(text2 || "");
+  var out = {};
+  out.one = t.trim().slice(0, 60);
+  out.pname = (t.match(/[「『]([^」』]{2,12})[」』]/) || [])[1] || t.trim().slice(0, 8).replace(/\s+/g, "");
+  var plat = [[/网页|web|浏览器|网站/i, "Web"], [/桌面|macos|windows|客户端/i, "桌面"], [/手机|移动|app|ios|安卓/i, "移动"], [/小程序/i, "小程序"], [/命令行|cli|终端|脚本/i, "CLI"], [/接口|后端|服务|api/i, "后端"]];
+  for (var i = 0; i < plat.length; i++) if (plat[i][0].test(t)) { out.atype = plat[i][1]; break; }
+  out.mvp = /mvp|先做|最小|一期/i.test(t) ? "是" : "是";
+  var who = (t.match(/(?:给|面向|服务)([^，,。；;]{2,18})/) || [])[1];
+  if (who) out.users = who.trim();
+  var win = (t.match(/(?:省|减少|加快|提升|替代|自动)([^，,。；;]{2,26})/) || [])[1];
+  if (win) out.value = win.trim();
+  if (out.users) out.story = "作为" + out.users + "，我希望" + (out.one || "用它") + "，以便省下重复劳动";
+  return out;
+}
+async function readJson(rel) {
+  var r = await fetch("/api/worktable/file?path=" + encodeURIComponent(absOf(rel)), { cache: "no-store" });
+  if (!r.ok) return null;
+  try { return JSON.parse(await r.text()); } catch (e) { return null; }
+}
+async function aiSubmit() {
+  var ask = (state.ask || "").trim();
+  if (!ask) { state.aiErr = "先写一句主要要求"; render(); return; }
+  state.aiBusy = true; state.aiErr = ""; render();
+  var g = guessFrom(ask);
+  var merged = Object.assign({}, state.form.code || {}, g);
+  state.form.code = merged; save(LS_WIZ + ".form", state.form);
+  var at = new Date().toISOString();
+  var req = { at: at, ask: ask, fields: merged, labels: labelsOf() };
+  try {
+    try { await api("/api/worktable/mkdir", { path: absOf(DRAFT_DIR) }); } catch (e) {
+    }
+    await writeFile(AI_REQ, JSON.stringify(req, null, 2));
+  } catch (e) {
+    state.aiBusy = false; state.aiErr = "写请求文件失败：" + e.message; render(); return;
+  }
+  var msg = "\u{1F4CC} 应用工作台 · AI 填表：读 " + AI_REQ + "（项目根目录），按其中 labels 把 fields 补全成可交付的草稿，" +
+    "写入 " + AI_BACK + "，格式 {\"fields\":{…},\"at\":\"与请求同一个 at\",\"note\":\"一句话说明\"}。" +
+    "能合理推断的直接写草稿，拿不准的留空字符串，不要编造事实。主要要求：" + ask;
+  var sent = hostFillInput(msg);
+  state.aiBusy = false; state.aiOpen = false; state.pendingAt = at;
+  if (!sent) {
+    var okc = await copyText(msg);
+    state.aiErr = okc ? "没找到会话输入框，指令已复制到剪贴板 —— 粘到会话里回车即可" : "请手动把 " + AI_REQ + " 发给会话";
+  }
+  render();
+  if (sent) toast("已填进会话输入框，按回车就能生成");
+  if (sent) startPoll();
+}
+function startPoll() {
+  stopPoll();
+  var n = 0;
+  state.pollTimer = setInterval(async function () {
+    if (!state.pendingAt || ++n > 150) { stopPoll(); return; }
+    await pullDraft(true);
+  }, 4000);
+}
+function stopPoll() { if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; } }
+async function pullDraft(silent) {
+  if (!state.pendingAt) { if (!silent) toast("还没有待回填的请求", true); return; }
+  var d = await readJson(AI_BACK);
+  if (!d || !d.fields || d.at !== state.pendingAt) return;
+  state.form.code = Object.assign({}, state.form.code || {}, cleanFields(d.fields));
+  save(LS_WIZ + ".form", state.form);
+  state.pendingAt = ""; stopPoll(); render();
+  toast(d.note ? "AI 已填好：" + d.note : "AI 已填好，可直接修改");
+}
+function cleanFields(f) {
+  var keep = labelsOf(), out = {};
+  Object.keys(f || {}).forEach(function (k) { if (keep[k] && typeof f[k] === "string") out[k] = f[k]; });
+  return out;
+}
+
+/* ============================ 工作台桥（同源） ============================
+   宿主上可靠的挂载点（读 dsh-worktable 源码确认，模块级注册、不会随侧栏卸载消失）：
+     window.__dshSessions / __dshPromptIntoSession / __dshOpenSession / __dshWorktable.splitStore
+   注意：这里刻意不走 __dshCustomEnv.custom.submit —— 那条通道会把新会话绑到目标窗口的产物清单上，
+   新应用就会顶掉工作台首页。我们要的是「挂到首页的应用列表」，所以用 sessions.create + prompt，
+   并在提示词里写清登记契约。取不到桥就降级成复制指令，绝不假装成功。 */
+function hosts() {
+  var out = [], w = null;
+  try { w = window; } catch (e) { return out; }
+  for (var i = 0; i < 6 && w; i++) {
+    if (out.indexOf(w) >= 0) break;
+    out.push(w);
+    try { if (w === w.parent) break; w = w.parent; } catch (e) { break; }
+  }
+  try { if (window.top && out.indexOf(window.top) < 0) out.push(window.top); } catch (e) {
+  }
+  return out;
+}
+function hostGet(key) {
+  var hs = hosts();
+  for (var i = 0; i < hs.length; i++) { try { if (hs[i][key]) return hs[i][key]; } catch (e) {
+    }
+  }
+  return null;
+}
+function currentProject() {
+  var g = hostGet("__dshWorktable");
+  var spec = g && g.splitStore && g.splitStore.spec;
+  return { projectId: (spec && spec.id) || "", projectName: (spec && spec.title) || "应用工作台" };
+}
+function sidOf(r) { return typeof r === "string" ? r : ((r && (r.sessionId || r.id)) || ""); }
+/* 关键：插件建会话走 createHostSession —— 先把 cwd 变成工作区，再用 workspaceId 建会话。
+   只传 cwd 的会话不进工作区清单，侧栏里根本看不到（实测过：两条 20:53/20:55 的会话就没进清单）。 */
+async function createSessionInWorkspace(ss, ws, cwd) {
+  if (typeof ss.using !== "function" || !ws) {
+    var r0 = await ss.create({ cwd: cwd });
+    var id0 = sidOf(r0);
+    if (id0) return { sessionId: id0, via: "直接建会话（宿主不要求工作区）" };
+  }
+  var w = null;
+  try { w = cwd ? await ws.create({ path: cwd }) : await ws.initializeDefault(); } catch (e) { w = null; }
+  var wid = w && w.workspaceId;
+  if (typeof wid !== "string" || !wid) throw new Error("拿不到工作区 id（__dshWorkspaces 不可用）");
+  var r1 = await ss.create({ workspaceId: wid });
+  var id1 = sidOf(r1);
+  if (!id1) throw new Error("sessions.create 没返回会话 id");
+  return { sessionId: id1, via: "工作区 " + wid.slice(0, 8) + "…" };
+}
+async function newBuildSession(text2) {
+  var ss = hostGet("__dshSessions"), pr = hostGet("__dshPromptIntoSession"), op = hostGet("__dshOpenSession"), ws = hostGet("__dshWorkspaces");
+  if (!ss || typeof ss.create !== "function" || typeof pr !== "function") {
+    return { ok: false, msg: "没拿到宿主会话接口（__dshSessions.create / __dshPromptIntoSession）" };
+  }
+  try {
+    var made = await createSessionInWorkspace(ss, ws, ROOT);
+    var sid = made.sessionId;
+    await pr(sid, text2);
+    try { if (op) await op(sid); } catch (e) {
+    }
+    return { ok: true, sessionId: sid, via: made.via };
+  } catch (e2) { return { ok: false, msg: "建会话失败：" + String((e2 && e2.message) || e2) }; }
+}
+
+/* ============================ 自检包闸门 ============================
+   口径与 dsh-worktable-icons/qa-gate.mjs 完全一致：产物在 + 自检包齐 = 可打开；
+   产物在但自检不齐 = 待验收（卡片上写清缺什么）；产物不在 = 制作中。
+   自检包 = 应用/<名>/自检/ 下：可重放检查物(*.mjs|*.js|冒烟页) + ≥2 张渲染图(含空态、窄屏) + 一句话说明(*.md) */
+var QA_EMPTY = /空态|empty/i, QA_NARROW = /窄屏|mobile|narrow/i;
+async function gateOf(a) {
+  var dir = APP_DIR + "/" + a.name + "/自检";
+  var names;
+  try {
+    var r = await api("/api/worktable/fs", { path: absOf(dir) });
+    names = (r.entries || []).map(function (e) { return e.name; });
+  } catch (e) { return { missing: ["自检目录"], shots: 0 }; }
+  var pngs = names.filter(function (n) { return /\.png$/i.test(n); });
+  var miss = [];
+  if (!names.some(function (n) { return /\.(mjs|js|html)$/i.test(n); })) miss.push("可重放检查物");
+  /* 文件名不算证据：只信 check 脚本产出的 自检/结果.json */
+  var res = null;
+  try { res = JSON.parse(await (await fetch("/api/worktable/file?path=" + encodeURIComponent(absOf(dir + "/结果.json")), { cache: "no-store" })).text()); } catch (e) { res = null; }
+  if (!res) miss.push("自检结果.json");
+  else {
+    var views = (res.views || []).join(" ");
+    if (res.pass !== true) miss.push("结果未通过");
+    if (views.indexOf("空态") < 0) miss.push("未拍到空态");
+    if (views.indexOf("窄屏") < 0) miss.push("未拍到窄屏");
+    if (!res.shots || res.shots < 2) miss.push("渲染图不足 2 张");
+  }
+  if (pngs.length < 2) miss.push("渲染图 ≥2 张");
+  if (!names.some(function (n) { return /^README/i.test(n); })) miss.push("交付说明 README");
+  return { missing: miss, shots: pngs.length };
+}
+
+/* ============================ 应用目录（首页挂载点） ============================ */
+function appRows() { return Array.isArray(state.apps) ? state.apps : []; }
+/* 产物存在性：按登记项 file 的完整相对路径判定（相对项目根，允许任意层级）。
+   旧口径只列 应用/ 一层再比 basename，子目录产物与多文件应用（index.html）会被误判"制作中"，
+   与 qa-gate.mjs 的 path.join(ROOT, file) + isFile 判定互相打脸。口径改动需两边同夹具对拍：
+   见 dsh-worktable-icons/qa-parity.mjs（R-CHANGE-6 / R-CHANGE-8）。 */
+var _dirFiles = {};
+/* 目录列表缓存必须能失效：否则同一页面里新建/删除产物后，状态永远停在第一次看到的快照 */
+function clearDirCache() { _dirFiles = {}; }
+async function productExists(rel) {
+  var p = String(rel || '').replace(/^\/+/, '');
+  if (!p || p.indexOf('..') >= 0) return false;
+  var i = p.lastIndexOf('/'), dir = i < 0 ? '' : p.slice(0, i), name = i < 0 ? p : p.slice(i + 1);
+  if (!_dirFiles[dir]) {
+    try {
+      var rr = await api('/api/worktable/fs', { path: absOf(dir || '.') });
+      _dirFiles[dir] = (rr.entries || []).filter(function (e) { return !e.isDir; }).map(function (e) { return e.name; });
+    } catch (e) { _dirFiles[dir] = []; }
+  }
+  return _dirFiles[dir].indexOf(name) >= 0;
+}
+async function loadApps() {
+  clearDirCache();
+  state.appsErr = "";
+  try {
+    var d = await readJson(APPS);
+    state.apps = Array.isArray(d && d.apps) ? d.apps : (Array.isArray(d) ? d : []);
+  } catch (e) { state.apps = []; state.appsErr = "读不到 " + APPS; }
+  /* 同一个应用可能被重复派工留下多条：界面按文件去重，取最新一条（文件本身不改写） */
+  var byFile = {};
+  state.apps.forEach(function (a) { if (a && a.file) { var k = a.file; if (!byFile[k] || String(a.at || "") > String(byFile[k].at || "")) byFile[k] = a; } });
+  state.apps = Object.keys(byFile).map(function (k) { return byFile[k]; })
+    .sort(function (x, y) { return String(y.at || "").localeCompare(String(x.at || "")); });
+  for (var i = 0; i < state.apps.length; i++) {
+    var a = state.apps[i]; if (!a) continue;
+    if (!a.file || !(await productExists(a.file))) { a.status = "制作中"; a.qa = null; continue; }
+    var g = await gateOf(a);
+    a.qa = { shots: g.shots, missing: g.missing };
+    a.status = g.missing.length ? "待验收" : "可打开";
+  }
+  /* 供 qa-parity.mjs 与闸门对拍（页面判的 vs Node 判的，同一份台账） */
+  try {
+    window.__APPS_JUDGED__ = state.apps.map(function (x) {
+      return { name: x.name, file: x.file, status: x.status, missing: (x.qa && x.qa.missing) || [] };
+    });
+  } catch (e) { }
+  return state.apps;
+}
+async function upsertApp(row) {
+  var list = appRows().slice();
+  var i = list.findIndex(function (a) { return a && (a.id === row.id || (a.file === row.file && a.status === "制作中")); });
+  if (i >= 0 && list[i].id !== row.id) row.id = list[i].id;   /* 复用旧条目，避免同一应用堆一串 */
+  if (i >= 0) list[i] = row; else list.unshift(row);
+  await writeFile(APPS, JSON.stringify({ version: 1, apps: list }, null, 2));
+  state.apps = list;
+}
+function appIdOf(name) { return "A" + stamp() + "-" + cleanName(name).slice(0, 10); }
+/* 给制作会话的任务书：明确产物、登记契约、以及不许动首页清单 */
+function buildTaskText(rel, row) {
+  var v = state.form.code || {};
+  return ["【应用工作台 · 开始执行】请新建一个应用并登记回首页。",
+    "方案书：" + absOf(rel),
+    "名称：" + row.name, "定位：" + (v.one || "-"), "用户：" + (v.users || "-"), "价值：" + (v.value || "-"),
+    "用户故事：" + String(v.story || "-").split("\n").join("；"),
+    "类型：" + (v.atype || "未定") + "｜MVP：" + (v.mvp || "未选") + (v.mvpNote ? "（边界：" + v.mvpNote + "）" : ""),
+    "形态：" + (v.form || "-") + "｜技术栈：" + (v.stack || "-"),
+    "要求：",
+    "1. 产物是单文件 HTML，写到 " + absOf(row.file) + "；皮肤用 /api/worktable/template/dshell.css，只用 dshell-* 组件类，不引外部资源，浅色科技蓝；",
+    "2. 做完把 " + APPS + "（项目根，UTF-8 JSON）里 id=" + row.id + " 的那条改成 status:\"可打开\" 并补 desc（一句话），没有这条就整条追加：{id,name,file,desc,at,status,sessionId}；",
+    "3. 自检包必须交齐，否则首页只标「待验收」不给打开：在 应用/" + row.name + "/自检/ 放 ① 可重放检查物（check.mjs 或冒烟页）② 渲染图 ≥2 张，文件名要含「空态」和「窄屏」（用 node dsh-worktable-icons/snapshot-any.mjs + qlmanage 出图）③ 一句话说明 README.md；",
+    "4. 交完跑一次 node dsh-worktable-icons/qa-gate.mjs --write，让它把 " + APPS + " 的 status 定成\"可打开\"；别手改状态；",
+    "5. 不要改 " + APPS + " 里别的条目，不要动 .dsh-worktable/ 下的挂载清单（首页不能被顶掉）；",
+    "6. 产出文件一律留在项目文件夹内，路径 " + ROOT + "；",
+    "7. 完成后回一句：文件路径 + 自检包清单 + 怎么验证。"].join("\n");
+}
+async function startBuild() {
+  if (!validate(WIZARDS[0], stepOf("code"))) return;
+  state.aiBusy = true; state.aiErr = ""; render();
+  var v = state.form.code || {};
+  var name = cleanName(v.pname || "未命名应用").slice(0, 16);
+  var row = { id: appIdOf(name), name: name, file: APP_DIR + "/" + name + ".html", desc: v.one || "", at: new Date().toISOString(), status: "制作中", sessionId: "" };
+  var rel = "";
+  try {
+    if (!(await ensureDir())) throw new Error(state.filesErr || "建目录失败");
+    try { await api("/api/worktable/mkdir", { path: absOf(APP_DIR) }); } catch (e) {
+    }
+    var out = WIZARDS[0].build(v);
+    rel = OUT_DIR + "/编程-" + stamp() + "-" + name + ".md";
+    await writeFile(rel, out.body);
+    await upsertApp(row);
+  } catch (e) {
+    state.aiBusy = false; state.aiErr = "准备失败：" + e.message; render(); return;
+  }
+  var r = await newBuildSession(buildTaskText(rel, row));
+  if (r.ok) {
+    row.sessionId = r.sessionId;
+    try { await upsertApp(row); } catch (e) {
+    }
+    startAppPoll();
+    state.aiBusy = false; render();
+    toast("已新建会话制作「" + name + "」，做好会自动挂到首页");
+  } else {
+    var okc = await copyText(buildTaskText(rel, row));
+    state.aiBusy = false; state.aiErr = r.msg + (okc ? "；任务书已复制到剪贴板，粘到任意会话即可" : "；请手动复制任务书");
+    render();
+  }
+}
+function startAppPoll() {
+  stopPoll();
+  var n = 0;
+  state.pollTimer = setInterval(async function () {
+    if (++n > 300) { stopPoll(); return; }
+    var before = JSON.stringify(appRows().map(function (a) { return a.status; }));
+    await loadApps();
+    if (JSON.stringify(appRows().map(function (a) { return a.status; })) !== before) { render(); toast("首页应用状态已更新"); }
+  }, 5000);
+}
+async function openApp(id) {
+  var a = appRows().filter(function (x) { return x && x.id === id; })[0];
+  if (!a) return;
+  if (a.status === "可打开") { showReel(a.file, a.name); return; }
+  toast("「" + a.name + "」" + (a.status === "待验收" ? "自检不齐，缺：" + (((a.qa && a.qa.missing) || []).join("、") || "自检包") : "还在制作中"), true);
+  /* 制作中 / 待验收：点一下 = 去那个会话看进度；没有会话 id 就如实说 */
+  var op = hostGet("__dshOpenSession");
+  if (a.sessionId && typeof op === "function") {
+    try { await op(a.sessionId); toast("已跳到制作会话"); return; } catch (e) { toast("跳不过去：" + String(e && e.message || e), true); return; }
+  }
+  toast(a.sessionId ? "这个会话 id 打不开，去侧栏找它" : "还没建起制作会话，再点一次开始执行", true);
+}
+
+/* 应用 + 产物 + 最近一次生成，合成一张表：一行一件事，操作就在行里 */
+function menuHtml() {
+  if (!state.menu) return "";
+  var pn = state.panes;
+  var canCollapse = pn && pn.found && pn.total > 1 && pn.extra > 0;
+  return '<div class="wt-menu"><button type="button" class="wt-menuItem" data-act="reload">重新载入</button>' +
+    '<button type="button" class="wt-menuItem" data-act="refresh">刷新数据</button>' +
+    (canCollapse ? '<button type="button" class="wt-menuItem" data-act="collapse">收掉多余产物窗 ' + pn.extra + "/" + pn.total + "</button>" : "") +
+    '<span class="wt-menuVer">构建 ' + esc(BUILD) + "</span></div>";
+}
+
+/* 一个视图装下三类记录：应用 / 产物 / 派工。搜索 + 筛选 chips，一行一件事 */
+var REC_FILTERS = ["全部", "应用", "产物", "派工"];
+function recRows() {
+  var out = [];
+  appRows().forEach(function (a) {
+    if (!a) return;
+    var ready = a.status === "可打开";
+    var miss = (a.qa && a.qa.missing) || [];
+    out.push({ kind: "应用", ic: ready ? "console" : "refresh", title: a.name, sub: a.desc || "",
+      at: a.at ? new Date(a.at).toLocaleString() : "",
+      badge: ready ? "dshell-badgeDone" : "dshell-badgeWait", badgeText: ready ? "可打开" : a.status === "待验收" ? "待验收 · 缺 " + miss.length + " 项" : "制作中",
+      extra: miss.length && !ready ? "缺：" + miss.join("、") : "",
+      ops: ready ? '<button type="button" class="dshell-btn dshell-btnGhost" data-reel="' + esc(a.file + "|@|" + a.name) + '">打开</button>'
+                 : '<button type="button" class="dshell-btn dshell-btnGhost" data-app="' + esc(a.id) + '">看进度</button>' });
+  });
+  state.files.forEach(function (e) {
+    out.push({ kind: "产物", ic: "file", title: e.name, sub: OUT_DIR + "/", at: e.mtime ? new Date(e.mtime).toLocaleString() : "",
+      badge: "", badgeText: "", extra: "",
+      ops: '<button type="button" class="dshell-btn dshell-btnGhost" data-reel="' + esc(OUT_DIR + "/" + e.name + "|@|" + e.name) + '">放映</button>' });
+  });
+  (state.ledger || []).forEach(function (r) {
+    var f0 = (r.files || [])[0];
+    out.push({ kind: "派工", ic: "scm", title: r.name || "—", sub: (r.wiz || "") + (r.files && r.files.length ? " · " + r.files.length + " 个产物" : ""),
+      at: r.at || "", badge: r.status === "已定版" ? "dshell-badgeDone" : "", badgeText: r.status || "草稿", extra: "",
+      ops: (f0 && safeRel(f0) ? '<button type="button" class="dshell-btn dshell-btnGhost" data-reel="' + esc(f0 + "|@|" + (r.name || "产物")) + '">放映</button> ' : "") +
+        (r.status === "已定版" ? "" : '<button type="button" class="dshell-btn dshell-btnGhost" data-ldone="' + esc(r.id) + '">定版</button>') });
+  });
+  var l = state.lastOut;
+  if (l) out.unshift({ kind: "产物", ic: "doc", title: "最近一次生成 · " + l.rel.split("/").pop(), sub: l.wiz || "", at: l.at || "",
+    badge: "dshell-badgeDone", badgeText: "刚生成", extra: "",
+    ops: '<button type="button" class="dshell-btn dshell-btnGhost" data-reel="' + esc(l.rel + "|@|" + (l.wiz || "产物")) + '">放映</button> ' +
+      '<button type="button" class="dshell-btn" data-act="copy-prompt">复制给 AI</button>' +
+      (state.pendingAt ? ' <button type="button" class="dshell-btn dshell-btnGhost" data-act="ai-pull">取回草稿</button>' : "") });
+  return out;
+}
+function recordsHtml() {
+  var all = recRows();
+  var q = String(state.q || "").trim().toLowerCase();
+  var n = { 全部: all.length, 应用: 0, 产物: 0, 派工: 0 };
+  all.forEach(function (r) { n[r.kind]++; });
+  var rows = all.filter(function (r) {
+    if (state.filter !== "全部" && r.kind !== state.filter) return false;
+    if (!q) return true;
+    return (r.title + " " + r.sub + " " + r.badgeText).toLowerCase().indexOf(q) >= 0;
+  });
+  var wait = n["应用"] - appRows().filter(function (a) { return a && a.status === "可打开"; }).length;
+  return '<div class="dshell-card">' +
+    '<div class="wt-row" style="margin-bottom:10px">' +
+      '<input class="dshell-input wt-recSearch" id="recQ" data-rec="q" value="' + esc(state.q) + '" placeholder="搜索记录"/>' +
+      '<div class="wt-chips">' + REC_FILTERS.map(function (k) {
+        return '<button type="button" class="dshell-btn dshell-btnGhost" data-rec-filter="' + k + '" data-on="' + (state.filter === k ? "true" : "false") + '">' + k + " " + n[k] + "</button>";
+      }).join("") + "</div>" +
+      (wait > 0 ? '<button type="button" class="dshell-btn dshell-btnGhost" data-act="app-rework">' + icon("doc") + " 复制返工单</button>" : "") +
+      '<button type="button" class="dshell-btn dshell-btnGhost" data-act="rec-refresh">' + icon("refresh") + " 刷新</button></div>" +
+    (state.ledgerErr ? '<div class="wt-err">' + esc(state.ledgerErr) + "</div>" : "") +
+    (rows.length ? '<div class="dshell-list">' + rows.map(function (r) {
+      return '<div class="dshell-listItem"><span class="dshell-listItemTitle">' + icon(r.ic) + " <b>" + esc(r.title) + "</b> " +
+        (r.sub ? '<span class="dshell-muted">' + esc(r.sub) + "</span>" : "") + "</span>" +
+        '<span class="dshell-listItemMeta">' + (r.badgeText ? '<span class="dshell-badge ' + (r.badge || "") + '">' + esc(r.badgeText) + "</span> " : "") +
+        '<span class="dshell-muted">' + esc(r.at || "") + "</span> " + r.ops + "</span>" +
+        (r.extra ? '<div class="wt-appMiss">' + esc(r.extra) + "</div>" : "") + "</div>";
+    }).join("") + "</div>" : '<div class="dshell-muted">' + (q || state.filter !== "全部" ? "没有匹配的记录" : "还没有记录。在「做应用」里点开始执行。") + "</div>") +
+    "</div>";
+}
+
+/* ============================ 渲染 ============================ */
+function tabsHtml() {
+  var mk = function (id, name, ic) {
+    return '<button type="button" class="dshell-tab' + (state.tab === id ? " dshell-tabOn" : "") +
+      '" data-tab="' + esc(id) + '">' + icon(ic) + " " + esc(name) + "</button>";
+  };
+  return '<div class="dshell-tabs">' + mk("code", "做应用", "tasks") + mk("rec", "记录", "scm") + "</div>";
+}
+function fieldHtml(wid, fd) {
+  var val = f(wid, fd.k);
+  var star = fd.req ? ' <span class="req">*</span>' : "";
+  if (fd.type === "fixed") return '<div class="wt-field"><label>' + esc(fd.label) + '</label><div class="dshell-muted">' + esc(fd.value) + "</div></div>";
+  if (fd.type === "radio") {
+    return '<div class="wt-field"><label>' + esc(fd.label) + star + '</label><div class="wt-opts">' +
+      fd.opts.map(function (o) {
+        return '<button type="button" class="dshell-btn dshell-btnGhost" data-on="' + (val === o ? "true" : "false") + '" data-f="' + wid + ":" + fd.k + '" data-v="' + esc(o) + '">' + esc(o) + "</button>";
+      }).join("") + "</div></div>";
+  }
+  if (fd.type === "textarea") {
+    return '<div class="wt-field"><label>' + esc(fd.label) + star + '</label><textarea class="dshell-textarea" rows="4" data-f="' + wid + ":" + fd.k + '" placeholder="' + esc(fd.ph || "") + '">' + esc(val) + "</textarea></div>";
+  }
+  return '<div class="wt-field"><label>' + esc(fd.label) + star + '</label><input class="dshell-input" data-f="' + wid + ":" + fd.k + '" value="' + esc(val) + '" placeholder="' + esc(fd.ph || "") + '"/></div>';
+}
+function secHead(title) {
+  return '<div class="wt-secHead"><h2 class="wt-h2">' + esc(title) + "</h2></div>";
+}
+function wizardHtml(w) {
+  var total = w.steps.length, cur = Math.min(stepOf(w.id), total - 1);
+  var step = w.steps[cur];
+  return '<div class="dshell-card">' +
+    '<div class="wt-steps">' + w.steps.map(function (st, i) {
+      return '<button type="button" class="wt-step" data-step="' + i + '" data-w="' + w.id + '" data-on="' + (i === cur ? "true" : "false") + '" data-done="' + (i < cur ? "true" : "false") + '"><i>' + (i < cur ? "&#10003;" : (i + 1)) + "</i>" + esc(st.title) + "</button>";
+    }).join("") + "</div>" +
+    '<div class="dshell-progress" style="margin-bottom:14px"><div class="dshell-progressBar" style="width:' + Math.round(((cur + 1) / total) * 100) + '%"></div></div>' +
+    step.fields.map(function (fd) { return fieldHtml(w.id, fd); }).join("") +
+    '<div class="wt-err" id="werr"></div>' +
+    '<div class="wt-nav">' +
+    (cur > 0 ? '<button type="button" class="dshell-btn dshell-btnGhost" data-nav="' + w.id + ':-1">上一步</button>' : "") +
+    '<span class="sp"></span><span class="dshell-muted">' + (cur + 1) + " / " + total + "</span>" +
+    (cur < total - 1
+      ? '<button type="button" class="dshell-btn" data-nav="' + w.id + ':1">下一步 ' + icon("custom") + "</button>"
+      : '<button type="button" class="dshell-btn dshell-btnGhost" data-gen="' + w.id + '">' + icon("doc") + " 只出方案书</button>" +
+        '<button type="button" class="dshell-btn" data-act="build">' + icon("custom") + " 开始执行</button>") +
+    "</div></div>";
+}
+function aiModalHtml() {
+  return '<div class="wt-aiMask" data-act="ai-mask"><div class="wt-aiCard">' +
+    "<h3>" + icon("custom") + ' AI 生成</h3><span class="dshell-muted">写一句主要要求，我先按它填一遍，再把任务发给会话补全。</span>' +
+    '<textarea class="dshell-textarea" rows="3" id="aiAsk" data-ai="ask" placeholder="例：做一个自己的文学工作台，先做 MVP">' + esc(state.ask) + "</textarea>" +
+    (state.aiErr ? '<div class="wt-err">' + esc(state.aiErr) + "</div>" : "") +
+    '<div class="wt-aiRow"><button type="button" class="dshell-btn dshell-btnGhost" data-act="ai-cancel">取消</button>' +
+    '<button type="button" class="dshell-btn" data-act="ai-go">' + (state.aiBusy ? "处理中…" : "生成并填入") + "</button></div></div></div>";
+}
+/* 待验收时给出一张可直接发给制作会话的返工单（缺什么由闸门算，不写死） */
+function reworkText(list) {
+  var bad = list.filter(function (a) { return a && a.status !== "可打开"; });
+  if (!bad.length) return "";
+  return bad.map(function (a) {
+    return ["【返工 · " + a.name + "】自检包不齐，首页不给打开。",
+      "缺：" + (((a.qa && a.qa.missing) || []).join("、") || "自检包"),
+      "要交：① 应用/" + a.name + "/自检/check.mjs（一条命令跑完，自己写结果.json）② 结果.json 写明 {pass:true,shots:N,views:[\"空态\",\"窄屏\",…]} ③ 真实渲染图 ≥2 张（空态要用空数据重拍，改文件名没用）④ README.md 一句话说明",
+      "补完跑：node dsh-worktable-icons/qa-gate.mjs --write —— 状态由闸门判定，不许手改 status。",
+      "边界：只改 应用/" + a.name + "*，不动 应用工作台.html 与 .dsh-worktable/ 挂载清单。"].join("\n");
+  }).join("\n\n---\n\n");
+}
+function render() {
+  var w = wizById(state.tab) || WIZARDS[0];
+  $("#app").innerHTML =
+    '<header class="wt-hero" data-build="' + BUILD + '"><div class="wt-brand">' +
+      '<span class="wt-mark">' + icon("layout") + '</span><span class="wt-brandName">应用工作台</span>' +
+      '<span class="wt-heroActions"><button type="button" class="dshell-btn" data-act="ai-open">' + icon("custom") + " AI 生成</button>" +
+        '<button type="button" class="dshell-btn dshell-btnGhost" data-act="menu" aria-expanded="' + (state.menu ? "true" : "false") + '">⋯</button>' +
+      "</span></div>" +
+    '<h1 class="wt-display">从想法到<em>能跑的应用</em></h1></header>' +
+    menuHtml() + tabsHtml() +
+    (state.aiOpen ? aiModalHtml() : "") +
+    (state.tab === "rec"
+      ? '<section class="wt-sec">' + recordsHtml() + "</section>"
+      : '<section class="wt-sec" id="wizards">' + wizardHtml(w) + "</section>");
+}
+/* ============================ 事件 ============================ */
+document.addEventListener("input", function (e) {
+  if (e.target.id === "aiAsk") { state.ask = e.target.value; return; }
+  if (e.target.id === "recQ") { state.q = e.target.value; state.recBusy = true; render(); var el0 = document.getElementById("recQ"); if (el0) { el0.focus(); el0.setSelectionRange(el0.value.length, el0.value.length); } return; }
+  var fkey = e.target.getAttribute && e.target.getAttribute("data-f");
+  if (fkey) { var p = fkey.split(":"); setF(p[0], p[1], e.target.value); return; }
+});
+document.addEventListener("keydown", function (e) { if (e.key === "Escape" && state.menu) { state.menu = false; render(); } });
+function showReel(rel, title) {
+  closeReel();
+  var d = document.createElement("div");
+  d.className = "wt-reel"; d.id = "wtReel";
+  d.innerHTML = '<div class="wt-reelbar">' + icon("file") + "<b>" + esc(title || "产物放映") + "</b>" +
+    '<span class="path">' + esc(rel) + '</span><span class="sp"></span>' +
+    '<a class="dshell-btn dshell-btnGhost" href="' + esc(siteUrl(rel)) + '" target="_blank" rel="noopener">新标签</a>' +
+    '<button type="button" class="dshell-btn" data-reel-close="1">返回工作台</button></div>' +
+    '<iframe src="' + esc(siteUrl(rel)) + '" title="' + esc(title || "产物") + '"></iframe>';
+  document.body.appendChild(d);
+}
+function closeReel() { var d = document.getElementById("wtReel"); if (d && d.parentNode) d.parentNode.removeChild(d); }
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeReel(); });
+
+document.addEventListener("click", async function (e) {
+  var el = e.target.closest ? e.target.closest("[data-reel],[data-reel-close],[data-f],[data-nav],[data-gen],[data-tab],[data-act],[data-ldone],[data-ldel],[data-step],[data-app]") : null;
+  if (!el) return;
+  var reel = el.getAttribute("data-reel");
+  if (reel) { var rp = reel.split("|@|"); showReel(rp[0], rp[1]); return; }
+  if (el.hasAttribute("data-reel-close")) { closeReel(); return; }
+  var fv = el.getAttribute("data-f");
+  if (fv && el.dataset.v != null) { var p = fv.split(":"); setF(p[0], p[1], el.dataset.v); render(); return; }
+  var nav = el.getAttribute("data-nav");
+  if (nav) {
+    var parts = nav.split(":"), wz = wizById(parts[0]), cur = stepOf(wz.id), d = Number(parts[1]);
+    if (d > 0 && !validate(wz, cur)) return;
+    setStep(wz.id, Math.max(0, Math.min(wz.steps.length - 1, cur + d))); render(); return;
+  }
+  var gen = el.getAttribute("data-gen");
+  if (gen) { var wg = wizById(gen); if (validate(wg, stepOf(wg.id))) await generate(wg); return; }
+  var stp = el.getAttribute("data-step");
+  if (stp != null) {
+    var swz = wizById(el.getAttribute("data-w")), from = stepOf(swz.id), to = Number(stp);
+    if (!(to >= 0 && to < swz.steps.length)) return;
+    if (to > from) { for (var k = from; k < to; k++) if (!validate(swz, k)) return; }
+    setStep(swz.id, to); render(); focusFirstField(swz.id); return;
+  }
+  var tab = el.getAttribute("data-tab");
+  if (tab) { state.tab = tab; render(); if (tab === "rec" && state.ledger == null) await refreshLedger(); return; }
+  var appId = el.getAttribute("data-app");
+  if (appId != null) { await openApp(appId); return; }
+  var rf = el.getAttribute("data-rec-filter");
+  if (rf != null) { state.filter = rf; render(); return; }
+  var act = el.getAttribute("data-act");
+  if (act === "rec-refresh") { state.ledger = null; await refreshLedger(); await refreshFiles(); await loadApps(); render(); return; }
+  if (act === "build") { await startBuild(); return; }
+  if (act === "menu") { state.menu = !state.menu; render(); return; }
+  if (act === "app-refresh") { await loadApps(); render(); return; }
+  if (act === "app-rework") {
+    var t = reworkText(appRows());
+    if (!t) { toast("没有待验收的应用", true); return; }
+    var okc = await copyText(t);
+    toast(okc ? "返工单已复制，发给制作会话即可" : "复制失败，见 应用/<名>/自检/返工单.md", !okc);
+    return;
+  }
+  if (act === "ai-open") { state.aiOpen = true; state.aiErr = ""; render(); var ta0 = document.getElementById("aiAsk"); if (ta0) ta0.focus(); return; }
+  if (act === "ai-cancel") { state.aiOpen = false; state.aiErr = ""; render(); return; }
+  if (act === "ai-mask") { if (e.target === el) { state.aiOpen = false; render(); } return; }
+  if (act === "ai-go") { await aiSubmit(); return; }
+  if (act === "ai-pull") { await pullDraft(false); return; }
+  if (act === "refresh") { await refreshFiles(); return; }
+  if (act === "reload") { location.reload(); return; }
+  if (act === "collapse") { collapsePanes(); return; }
+  if (act === "ledger-refresh") { state.ledger = null; await refreshLedger(); return; }
+  var ldone = el.getAttribute("data-ldone");
+  if (ldone) { await ledgerSetStatus(ldone, "已定版"); return; }
+  var ldel = el.getAttribute("data-ldel");
+  if (ldel) { await ledgerDelete(ldel); return; }
+  if (act === "copy-prompt" && state.lastOut) { var okc = await copyText(state.lastOut.prompt); toast(okc ? "任务提示词已复制，粘到会话里发给 AI 即可" : "复制失败，请打开文件手动复制", !okc); return; }
+});
+function focusFirstField(wid) {
+  var el = document.querySelector('[data-f^="' + wid + ':"]');
+  if (!el || typeof el.focus !== "function") return false;
+  try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  if (typeof el.scrollIntoView === "function") {
+    try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {
+    }
+  }
+  return true;
+}
+function validate(w, cur) {
+  var step = w.steps[cur], v = state.form[w.id] || {};
+  var miss = step.fields.filter(function (fd) { return fd.req && !String(v[fd.k] || "").trim(); });
+  if (miss.length) { var e = $("#werr"); if (e) e.textContent = "请先填写：" + miss.map(function (m) { return m.label; }).join("、"); toast("这一步还有必填项", true); return false; }
+  return true;
+}
+
+/* ============================ 启动 ============================ */
+buildDefs();
+seedExample();
+scanPanes();
+render();
+refreshFiles();
+loadApps().then(function () { render(); if (appRows().some(function (a) { return a.status === "制作中"; })) startAppPoll(); });
+if (state.tab === "rec") refreshLedger();
+</script>
+</body>
+</html>
